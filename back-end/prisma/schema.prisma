@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户表：存储系统用户的基本信息
+model SysUser {
+  userId          Int     @id @default(autoincrement()) @map("user_id")      // 用户ID，主键，自增
+  username        String     @unique                                            // 用户名
+  password        String                                                        // 密码（加密存储）
+  nickName        String     @map("nick_name")                                  // 昵称
+  gender          Int?       @default(1)                                        // 性别：1-男，0-女
+  email           String?    @unique                                            // 邮箱
+  phone           String?    @unique                                            // 手机号
+  avatar          String?                                                       // 头像URL
+  status          Int?       @default(1)                                        // 状态：0-禁用，1-正常，2-锁定
+  isDeleted       Boolean?   @default(false) @map("is_deleted")                 // 删除标志：0-未删除，1-已删除
+  lastLoginIp     String?    @map("last_login_ip")                              // 最后一次登录IP地址
+  lastLoginTime   DateTime?  @map("last_login_time")                            // 最后一次登录时间
+  remark          String?                                                       // 备注信息（可为空）
+  createTime      DateTime?  @default(now()) @map("create_time")                // 创建时间，默认当前时间
+  updateTime      DateTime?  @updatedAt() @map("update_time")                   // 最后更新时间，自动更新
+  createBy        Int?    @map("create_by")                                  // 创建者ID
+  updateBy        Int?    @map("update_by")                                  // 最后更新者ID
+
+  // 用户与角色的多对多关系（使用隐式中间表）
+  roles           SysRole[]
+
+  @@map("sys_user")
+}
+
+// 角色表：存储系统角色信息
+model SysRole {
+  roleId          Int     @id @default(autoincrement()) @map("role_id")      // 角色ID，主键，自增
+  roleName        String?    @unique @map("role_name")                          // 角色名称
+  roleKey         String?    @unique @map("role_key")                           // 角色标识符
+  status          Int?       @default(0)                                        // 状态： 0正常 1停用 
+  isDeleted       Boolean?   @default(false) @map("is_deleted")                 // 删除标志：0-未删除，1-已删除
+  remark          String?                                                       // 备注信息（可为空）
+  createTime      DateTime?  @default(now()) @map("create_time")                // 创建时间，默认当前时间
+  updateTime      DateTime?  @updatedAt() @map("update_time")                   // 最后更新时间，自动更新
+  createBy        Int?    @map("create_by")                                  // 创建者ID
+  updateBy        Int?    @map("update_by")                                  // 最后更新者ID
+
+  // 角色与用户的多对多关系（使用隐式中间表）
+  users           SysUser[]
+  
+  // 角色与菜单的多对多关系（使用隐式中间表）
+  menus           SysMenu[]
+
+  @@map("sys_role")
+}
+
+// 菜单表：存储系统菜单信息
+model SysMenu {
+  menuId          Int     @id @default(autoincrement()) @map("menu_id")      // 菜单ID，主键，自增
+  menuName        String     @map("menu_name")                                  // 菜单名称
+  parentId        Int?    @default(0) @map("parent_id")                      // 父菜单ID，0表示顶级菜单
+  parentMenu      SysMenu?   @relation("RelationMenus", fields: [parentId], references: [menuId]) // 父菜单
+  chidrenMenus    SysMenu[]  @relation("RelationMenus")                         // 子菜单列表
+  path            String?                                                       // 菜单路径
+  component       String?                                                       // 菜单组件路径
+  icon            String?                                                       // 菜单图标
+  orderNum        Int?       @default(0) @map("order_num")                      // 菜单排序号，默认0
+  isVisible       Boolean?   @default(true) @map("is_visible")                  // 是否可见：true-可见，false-不可见
+  isCacheable     Boolean?   @default(true) @map("is_cacheable")                // 是否可缓存：true-可缓存，false-不可缓存
+  isDeleted       Boolean?   @default(false) @map("is_deleted")                 // 删除标志：0-未删除，1-已删除
+  createTime      DateTime?  @default(now()) @map("create_time")                // 创建时间，默认当前时间
+  updateTime      DateTime?  @updatedAt() @map("update_time")                   // 最后更新时间，自动更新
+  createBy        Int?    @map("create_by")                                  // 创建者ID
+  updateBy        Int?    @map("update_by")                                  // 最后更新者ID
+
+  // 菜单与角色的多对多关系（使用隐式中间表）
+  roles           SysRole[]
+
+  @@map("sys_menu")
+}
