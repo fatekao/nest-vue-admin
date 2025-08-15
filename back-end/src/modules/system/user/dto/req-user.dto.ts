@@ -1,6 +1,7 @@
-import { OmitType, ApiProperty } from '@nestjs/swagger';
+import { OmitType, ApiProperty, PickType } from '@nestjs/swagger';
 import { AuditDto } from '@/common/dto/audit.dto';
-import { IsString, IsEmail, IsInt, IsBoolean, IsOptional, IsNotEmpty } from 'class-validator';
+import { PaginationDto } from '@/common/dto/pagination.dto';
+import { IsString, IsEmail, IsInt, IsBoolean, IsOptional, IsNotEmpty, Matches } from 'class-validator';
 
 // 新增用户
 export class CreateUserDto extends AuditDto {
@@ -12,6 +13,9 @@ export class CreateUserDto extends AuditDto {
   @ApiProperty({ description: '密码', example: '123456' })
   @IsString()
   @IsNotEmpty()
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/, {
+    message: '密码至少8位，需包含大小写字母、数字和特殊字符',
+  })
   password: string;
 
   @ApiProperty({ description: '昵称', example: '管理员' })
@@ -82,6 +86,18 @@ export class UpdateUserPwdDto {
   @IsString()
   @IsNotEmpty()
   newPassword: string;
+}
+
+export class UserPageRequeryDto extends PaginationDto {
+  @ApiProperty({ description: '用户名', required: false, example: 'username' })
+  @IsString()
+  @IsOptional()
+  username?: string;
+
+  @ApiProperty({ description: '角色ID', required: false, example: 1 })
+  @IsInt()
+  @IsOptional()
+  roleId?: number;
 }
 
 // 删除用户

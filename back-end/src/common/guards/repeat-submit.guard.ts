@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
-import { RedisService } from '@/modules/common/redis/redis.service';
+import { RedisService } from '@/shared/redis/redis.service';
 import { RepeatSubmitOptions } from '../decorators/repeat-submit.decorator';
 import { REPEAT_SUBMIT_METADATA } from '../constants/decorator.constant';
 

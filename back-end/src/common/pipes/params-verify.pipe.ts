@@ -21,11 +21,11 @@ export class ParamsVerifyPipe implements PipeTransform {
     }
 
     // 将普通对象转换为指定类的实例，以便进行验证
-    const DTO = plainToInstance(metadata.metatype, value);
+    const DTO = plainToInstance(metadata.metatype, value, {
+      enableImplicitConversion: true,
+    });
     // 使用 class-validator 对转换后的实例进行验证
     const errors = await validate(DTO);
-
-    console.log('this.handlerError(errors) from !!!!!', this.handlerError(errors));
 
     // 如果存在验证错误，则抛出异常
     if (errors.length > 0) {
@@ -33,7 +33,7 @@ export class ParamsVerifyPipe implements PipeTransform {
     }
 
     // 验证通过，返回原始值
-    return value;
+    return DTO;
   }
 
   /**
@@ -60,7 +60,6 @@ export class ParamsVerifyPipe implements PipeTransform {
       const { constraints, property } = error;
       return { property, constraints };
     });
-    console.log('formattedErrors !!!!', formattedErrors);
 
     // 返回统一的错误响应格式
     return {

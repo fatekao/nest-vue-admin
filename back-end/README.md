@@ -1,98 +1,90 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# NestJS Vue Admin 后端项目
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+基于 NestJS 构建的后台管理系统后端服务，提供 RESTful API 接口，支持用户认证、权限管理等功能。
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## 技术栈
 
-## Description
+- [NestJS](https://nestjs.com/) - 基于 TypeScript 的 Node.js 框架
+- [Prisma](https://www.prisma.io/) - Node.js 和 TypeScript 的 ORM
+- [MySQL](https://www.mysql.com/) - 关系型数据库
+- [Redis](https://redis.io/) - 内存数据库，用于缓存和会话管理
+- [JWT](https://jwt.io/) - JSON Web Token 实现用户认证
+- [Swagger](https://swagger.io/) - API 文档生成工具
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 项目结构
 
-## Project setup
+src/
+├── common/ # 公共模块
+│ ├── constants/ # 常量定义
+│ ├── decorators/ # 自定义装饰器
+│ ├── dto/ # 数据传输对象
+│ ├── filters/ # 全局异常过滤器
+│ ├── guards/ # 守卫
+│ ├── interceptors/ # 拦截器
+│ ├── interfaces/ # 接口定义
+│ └── pipes/ # 管道
+├── config/ # 配置文件
+├── modules/ # 功能模块
+│ ├── auth/ # 认证模块
+│ ├── common/ # 公共模块（日志、Redis等）
+│ └── system/ # 系统模块（用户、角色、菜单）
+├── prisma/ # Prisma 数据库相关
+└── main.ts # 应用入口文件
 
-```bash
-$ npm install
-```
+## 环境要求
 
-## Compile and run the project
+- Node.js >= 16.x
+- Docker & Docker Compose（推荐）
+- MySQL >= 8.0（使用 Docker 时自动安装）
+- Redis（使用 Docker 时自动安装）
 
-```bash
-# development
-$ npm run start
+## 快速开始
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
+### 1. 克隆项目
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+git clone <项目地址>
+cd back-end
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 2. 安装依赖
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+npm install
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 3. 配置环境变量
 
-## Resources
+### 4. 启动数据库和缓存服务
 
-Check out a few resources that may come in handy when working with NestJS:
+```bash
+docker-compose up -d
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+此命令将启动：
 
-## Support
+- MySQL 数据库（端口: 3306）
+- Redis 缓存服务（端口: 6379）
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### 5. 运行应用
 
-## Stay in touch
+```bash
+# 开发模式
+npm run start:dev
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+# 生产模式
+npm run start:prod
+```
 
-## License
+## 数据库迁移
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+# 创建数据库迁移
+npm run prisma:migrate-create
+
+# 同步数据库结构
+npm run prisma:push-DB
+
+# 从现有数据库生成 Prisma schema
+npm run prisma:pull-DB
+```

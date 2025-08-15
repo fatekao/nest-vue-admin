@@ -1,33 +1,38 @@
 services:
-
   mysql:
     image: mysql:latest
     container_name: nest-admin-mysql
     env_file:
-      - .env
       - .env.production
     ports:
-      - "${DB_PORT}:3306"
+      - '${DB_PORT:-3306}:3306'
     volumes:
       - mysql_data:/var/lib/mysql
     command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     restart: unless-stopped
     networks:
       - nest-admin-network
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-123456}
+      MYSQL_DATABASE: ${DB_NAME:-nest_admin}
+
   redis:
     image: redis:alpine
     container_name: nest-admin-redis
     env_file:
-      - .env
       - .env.production
     ports:
-      - "${REDIS_PORT}:6379"
+      - '${REDIS_PORT:-6379}:6379'
     volumes:
       - redis_data:/data
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-123456}
     restart: unless-stopped
     networks:
       - nest-admin-network
+
+volumes:
+  mysql_data:
+  redis_data:
 
 networks:
   nest-admin-network:

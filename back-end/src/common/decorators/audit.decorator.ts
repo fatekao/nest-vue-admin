@@ -16,11 +16,12 @@ export const AuditParamDecorator = createParamDecorator((data: unknown, ctx: Exe
   const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
 
   const injectAudit = <T extends CreateAuditDto>(val: T): T => {
-    return {
-      ...val,
-      createBy: request.user.userId,
-      updateBy: request.user.userId,
-    };
+    const data = { ...val };
+    if (request.user.userId) {
+      data.createBy = request.user.userId;
+      data.updateBy = request.user.userId;
+    }
+    return data;
   };
 
   return injectAudit;

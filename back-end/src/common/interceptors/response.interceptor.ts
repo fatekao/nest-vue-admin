@@ -4,7 +4,7 @@ import { map, tap } from 'rxjs/operators';
 import { Request } from 'express';
 
 import { ApiResponse } from '@/common/interfaces/api-response';
-import { LoggerService } from '@/modules/common/logger/logger.service';
+import { LoggerService } from '@/shared/logger/logger.service';
 
 /**
  * 响应拦截器

@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 // import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { PrismaModule } from './prisma/prisma.module';
 import { SystemModule } from './modules/system/system.module';
-import { CommonModule } from './modules/common/common.module';
+import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './modules/auth/auth.module';
 
 import config from '@/config/index';
@@ -31,10 +30,9 @@ console.log(`当前启动的环境为：${envPath}`);
  */
 @Module({
   imports: [
-    PrismaModule, // 数据库相关模块
     SystemModule, // 系统业务模块
     AuthModule, // 认证模块
-    CommonModule, // 公共模块，包含通用服务和工具
+    SharedModule, // 公共模块，包含通用服务和工具
     // 全局配置模块
     ConfigModule.forRoot({
       isGlobal: true, // 设置为全局模块

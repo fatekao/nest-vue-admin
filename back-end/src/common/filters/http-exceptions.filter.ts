@@ -1,6 +1,6 @@
 import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
 import { Response, Request } from 'express';
-import { LoggerService } from '@/modules/common/logger/logger.service';
+import { LoggerService } from '@/shared/logger/logger.service';
 
 interface ErrorResponse {
   code: number;
@@ -17,7 +17,7 @@ interface ErrorResponse {
  * 对于非HttpException类型的异常，返回500状态码
  */
 @Catch()
-export class AllExceptionsFilter implements ExceptionFilter {
+export class HttpExceptionFilter implements ExceptionFilter {
   constructor(private readonly logger: LoggerService) {}
   /**
    * 异常处理方法
@@ -36,6 +36,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
     // 确定响应消息
     const message = exception instanceof HttpException ? exception.message : '服务器错误';
 
+    // 获取异常的响应数据（如果有）
+    const exceptionResponse = exception instanceof HttpException ? exception.getResponse() : null;
+
     // 记录日志
     const { headers, url, params, query, body, method } = request;
     this.logger.log('请求信息', { headers, url, params, query, body, method });
@@ -49,7 +52,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: request.url,
     };
 
-    console.error('异常信息  !!!!', response);
+    // 如果有详细的错误信息，添加到响应中
+    if (exceptionResponse && typeof exceptionResponse === 'object' && 'errors' in exceptionResponse) {
+      errorResponse.details = (exceptionResponse as any).errors;
+    }
 
     // 检查响应是否已经发送
     if (!response.headersSent) {

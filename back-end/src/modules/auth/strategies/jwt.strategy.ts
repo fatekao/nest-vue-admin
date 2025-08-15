@@ -3,7 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import type { JwtConfig } from '@/config/jwt.config';
-import { RedisService } from '@/modules/common/redis/redis.service';
+import { RedisService } from '@/shared/redis/redis.service';
 
 // 定义 JWT payload 的类型
 interface JwtPayload {

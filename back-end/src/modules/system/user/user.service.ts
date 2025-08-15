@@ -1,8 +1,8 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { CreateUserDto, UpdateUserDto } from './dto/req-user.dto';
+import { CreateUserDto, UpdateUserDto, UserPageRequeryDto } from './dto/req-user.dto';
 
-import { PrismaService } from '@/prisma/prisma.service';
-import { RedisService } from '@/modules/common/redis/redis.service';
+import { PrismaService } from '@/shared/prisma/prisma.service';
+import { RedisService } from '@/shared/redis/redis.service';
 
 import * as bcrypt from 'bcrypt';
 
@@ -76,17 +76,54 @@ export class UserService {
       },
     });
 
-    const cacheKey = `user: ${userId}`;
+    const cacheKey = `user:${userId}`;
     await this.redis.del(cacheKey);
     return true;
   }
 
-  async findAll() {
-    const user = await this.prisma.sysUser.findMany({
-      where: { isDeleted: false },
-      orderBy: { userId: 'asc' },
-    });
-    return user;
+  async findPage(query: UserPageRequeryDto) {
+    console.log('######query######', query);
+    const { username, roleId, page, pageSize } = query;
+    const where: {
+      isDeleted?: boolean;
+      username?: {
+        contains: string;
+      };
+      roleId?: number;
+    } = {
+      isDeleted: false,
+    };
+    if (username) {
+      where.username = {
+        contains: username,
+      };
+    }
+    if (roleId) {
+      where.roleId = roleId;
+    }
+
+    const skip = (page - 1) * pageSize;
+    const [users, total] = await Promise.all([
+      this.prisma.sysUser.findMany({
+        where,
+        skip,
+        take: pageSize,
+      }),
+      this.prisma.sysUser.count({
+        where,
+      }),
+    ]);
+
+    const totalPages = Math.ceil(total / pageSize);
+    return {
+      list: users.map((item) => ({ ...item, password: undefined })),
+      pagination: {
+        total,
+        totalPages,
+        page: query.page,
+        pageSize: query.pageSize,
+      },
+    };
   }
 
   async findOne(userId: number) {
@@ -119,7 +156,6 @@ export class UserService {
 
   update(updateUserDto: UpdateUserDto) {
     const { userId, ...updateData } = updateUserDto;
-    console.log('updateData', updateData);
     return this.prisma.sysUser.update({
       where: {
         userId,
