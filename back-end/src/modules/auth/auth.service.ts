@@ -3,8 +3,6 @@ import { PrismaService } from '@/shared/prisma/prisma.service';
 import { RedisService } from '@/shared/redis/redis.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-
-import { LoginDto } from './dto/req-auth.dto';
 import { User } from '@/modules/system/user/entities/user.entity';
 
 /**
@@ -33,7 +31,7 @@ export class AuthService {
    * @returns Promise<User> - 验证成功的用户信息
    * @throws UnauthorizedException - 当用户不存在、密码错误或用户状态异常时抛出
    */
-  async validateUser(username: string, password: string): Promise<User> {
+  async validateUser(username: string, pass: string): Promise<User> {
     // 查询用户信息，确保用户未被删除且处于激活状态
     const user = await this.prisma.sysUser.findUnique({
       where: {
@@ -45,13 +43,18 @@ export class AuthService {
 
     // 用户不存在时抛出异常
     if (!user) throw new UnauthorizedException('用户不存在');
+
+    const { password, ...result } = user;
+    console.log(username, pass, password);
+
     // 用户密码未设置时抛出异常
-    if (!user.password) throw new UnauthorizedException('用户密码未设置');
+    if (!password) throw new UnauthorizedException('用户密码未设置');
 
     // 验证密码是否匹配
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) throw new UnauthorizedException('用户名或密码错误');
-    return user;
+    const isMatch = await bcrypt.compare(password, pass);
+    if (!isMatch) throw new UnauthorizedException('用户名或密码错误2222');
+
+    return result;
   }
 
   /**
@@ -61,12 +64,10 @@ export class AuthService {
    * @param user - 已验证的用户信息
    * @returns Promise<{ accessToken: string }> - 包含访问令牌的响应对象
    */
-  async login(loginDto: LoginDto, user: User): Promise<{ accessToken: string }> {
-    const { username } = loginDto;
-
+  async signIn(user: User): Promise<{ accessToken: string }> {
     // 构造JWT payload数据
     const payload = {
-      username,
+      username: user.username,
       userId: user.userId,
     };
 

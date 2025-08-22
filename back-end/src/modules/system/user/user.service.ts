@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Body, Injectable, NotFoundException, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto, UserPageRequeryDto } from './dto/req-user.dto';
+import { CreatePipe } from '@/common/pipes/create.pipe';
 
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { RedisService } from '@/shared/redis/redis.service';
 
 import * as bcrypt from 'bcrypt';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class UserService {
@@ -14,7 +16,7 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
   ) {}
-  async create(createUserDto: CreateUserDto) {
+  async create(@Body(CreatePipe) createUserDto: CreateUserDto) {
     const salt = await bcrypt.genSalt(this.SALT_ROUNDS);
     const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
 
@@ -23,9 +25,16 @@ export class UserService {
       password: hashedPassword,
     };
 
-    return this.prisma.sysUser.create({
-      data: userData,
-    });
+    try {
+      return await this.prisma.sysUser.create({
+        data: userData,
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('邮箱已被注册');
+      }
+      throw error;
+    }
   }
 
   async setPassword(userId: number, newPassword: string) {
@@ -154,14 +163,22 @@ export class UserService {
     });
   }
 
-  update(updateUserDto: UpdateUserDto) {
+  async update(updateUserDto: UpdateUserDto) {
     const { userId, ...updateData } = updateUserDto;
-    return this.prisma.sysUser.update({
-      where: {
-        userId,
-      },
-      data: updateData,
-    });
+    
+    try {
+      return await this.prisma.sysUser.update({
+        where: {
+          userId,
+        },
+        data: updateData,
+      });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('邮箱已被注册');
+      }
+      throw error;
+    }
   }
 
   remove(userId: number) {

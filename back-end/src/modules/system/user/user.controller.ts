@@ -1,6 +1,5 @@
 import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { UserService } from './user.service';
-import { AuditParamDecorator, CreateAuditType, UpdateAuditType } from '@/common/decorators/audit.decorator';
 import { CreateUserDto, UpdateUserDto, UserPageRequeryDto } from './dto/req-user.dto';
 import { Public } from '@/common/decorators/jwt.decorator';
 import { ParamsVerifyPipe } from '@/common/pipes/params-verify.pipe';
@@ -12,8 +11,8 @@ export class UserController {
 
   @Public()
   @Post('/create')
-  create(@Body() createUserDto: CreateUserDto, @AuditParamDecorator() injectAudit: CreateAuditType) {
-    return this.userService.create(injectAudit(createUserDto));
+  async create(@Body() createUserDto: CreateUserDto) {
+    return await this.userService.create(createUserDto);
   }
 
   @Get('/page')
@@ -28,8 +27,8 @@ export class UserController {
   }
 
   @Post('/update')
-  update(@Body() updateUserDto: UpdateUserDto, @AuditParamDecorator() injectAudit: UpdateAuditType) {
-    return this.userService.update(injectAudit(updateUserDto));
+  async update(@Body() updateUserDto: UpdateUserDto) {
+    return await this.userService.update(updateUserDto);
   }
 
   @Post('/delete')

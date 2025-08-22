@@ -1,27 +1,22 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 // import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SystemModule } from './modules/system/system.module';
 import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './modules/auth/auth.module';
 
+import { LoggerMiddleware } from './common/middleware/Logger.middleware';
+
+import { ConfigModule } from '@nestjs/config';
 import config from '@/config/index';
 import { configJoiSchema } from '@/config/schema.config';
-import { ConfigModule } from '@nestjs/config';
-
-/**
- * 获取当前运行环境
- *
- * @returns 返回当前环境字符串，默认为 'development'
- */
-const getNodeEnv = () => process.env.NODE_ENV || 'development';
 
 /**
  * 根据环境变量确定配置文件路径
  */
+const getNodeEnv = () => process.env.NODE_ENV || 'development';
 const envPath = `.env.${getNodeEnv()}`;
 
-// 输出当前启动的环境信息
 console.log(`当前启动的环境为：${envPath}`);
 
 /**
@@ -49,4 +44,9 @@ console.log(`当前启动的环境为：${envPath}`);
   controllers: [], // 注册控制器
   providers: [AppService], // 注册服务提供者
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // 添加中间件
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}

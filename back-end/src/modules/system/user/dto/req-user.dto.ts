@@ -1,10 +1,9 @@
-import { OmitType, ApiProperty, PickType } from '@nestjs/swagger';
-import { AuditDto } from '@/common/dto/audit.dto';
+import { OmitType, ApiProperty } from '@nestjs/swagger';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 import { IsString, IsEmail, IsInt, IsBoolean, IsOptional, IsNotEmpty, Matches } from 'class-validator';
 
 // 新增用户
-export class CreateUserDto extends AuditDto {
+export class CreateUserDto {
   @ApiProperty({ description: '用户名', example: 'admin' })
   @IsString()
   @IsNotEmpty()

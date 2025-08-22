@@ -20,14 +20,14 @@ export class AuditDto {
   @IsOptional()
   @IsString()
   @Expose()
-  @Transform(({ value }) => new Date(value).toISOString())
+  @Transform(({ value }) => (value ? new Date(value).toISOString() : undefined))
   createTime?: Date | string | null;
 
   @ApiProperty({ description: '更新时间', example: '2023-01-01T00:00:00Z', required: false })
   @IsOptional()
   @IsString()
   @Expose()
-  @Transform(({ value }) => new Date(value).toISOString())
+  @Transform(({ value }) => (value ? new Date(value).toISOString() : undefined))
   updateTime?: Date | string | null;
 }
 

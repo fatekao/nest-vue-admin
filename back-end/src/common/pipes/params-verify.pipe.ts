@@ -21,19 +21,24 @@ export class ParamsVerifyPipe implements PipeTransform {
     }
 
     // 将普通对象转换为指定类的实例，以便进行验证
-    const DTO = plainToInstance(metadata.metatype, value, {
+    const object = plainToInstance(metadata.metatype, value, {
       enableImplicitConversion: true,
     });
     // 使用 class-validator 对转换后的实例进行验证
-    const errors = await validate(DTO);
+    const errors = await validate(object);
+
+    console.log('###### TRANSFORM DEBUG ######');
+    console.log('Input value:', value);
+    console.log('Converted object:', object);
+    console.log('Metadata metatype:', metadata.metatype);
 
     // 如果存在验证错误，则抛出异常
     if (errors.length > 0) {
       throw new BadRequestException(this.handlerError(errors));
     }
 
-    // 验证通过，返回原始值
-    return DTO;
+    // 验证通过
+    return object;
   }
 
   /**
@@ -44,6 +49,8 @@ export class ParamsVerifyPipe implements PipeTransform {
   private toValidate(metatype): boolean {
     // 定义不需要验证的基本类型
     const types = [String, Boolean, Number, Array, Object];
+
+    console.log(`Metatype ${metatype} needs validation: `);
 
     // 如果类型不在基本类型中，则需要验证
     return !types.includes(metatype);
@@ -60,6 +67,10 @@ export class ParamsVerifyPipe implements PipeTransform {
       const { constraints, property } = error;
       return { property, constraints };
     });
+
+    console.log('@@@@@@@@@@@@@@@@@@@@@@');
+    console.log(formattedErrors);
+    console.log(errors);
 
     // 返回统一的错误响应格式
     return {

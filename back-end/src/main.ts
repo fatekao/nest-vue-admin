@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 import { ResponseInterceptor } from '@/common/interceptors/response.interceptor';
-import { HttpExceptionFilter } from '@/common/filters/http-exceptions.filter';
+import { AllExceptionFilter } from '@/common/filters/all-exceptions.filter';
 import { LoggerService } from '@/shared/logger/logger.service';
 import { ParamsVerifyPipe } from '@/common/pipes/params-verify.pipe';
 
@@ -22,7 +22,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ResponseInterceptor(loggerService));
 
   // 注册全局异常过滤器，统一异常处理
-  app.useGlobalFilters(new HttpExceptionFilter(loggerService));
+  app.useGlobalFilters(new AllExceptionFilter(loggerService));
 
   // 注册全局管道，参数验证和转换
   app.useGlobalPipes(new ParamsVerifyPipe());

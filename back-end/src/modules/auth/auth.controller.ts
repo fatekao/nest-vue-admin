@@ -29,7 +29,7 @@ export class AuthController {
     @Body(new ParamsVerifyPipe()) loginDto: LoginDto,
     @Request() req: AuthenticatedRequest,
   ): Promise<{ accessToken: string }> {
-    return this.authService.login(loginDto, req.user);
+    return this.authService.signIn(req.user);
   }
 
   @Get('getUserInfo')

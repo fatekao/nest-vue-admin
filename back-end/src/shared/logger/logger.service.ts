@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, LoggerService as NestLoggerService } from '@nestjs/common';
 import { createLogger, format, transports, Logger } from 'winston';
 import 'winston-daily-rotate-file';
 
@@ -12,8 +12,9 @@ import 'winston-daily-rotate-file';
  * 4. 开发环境和生产环境的不同配置
  */
 @Injectable()
-export class LoggerService {
+export class LoggerService implements NestLoggerService {
   private readonly logger: Logger;
+
   constructor() {
     this.logger = createLogger({
       // 默认日志级别
@@ -21,16 +22,19 @@ export class LoggerService {
 
       // 默认日志格式
       format: format.combine(
-        format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-        format.printf(({ message, timestamp, level, ...metadata }) => {
-          let logMessage = `${String(timestamp)} [${String(level)}]: ${String(message)}`;
+        format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+        format.errors({ stack: true }),
+        format.printf(({ message, timestamp, level, stack, ...metadata }) => {
+          let logMessage = `${String(timestamp)} [${String(level).toUpperCase()}]: ${String(message)}`;
+
+          // 如果有错误堆栈信息，则添加到日志中
+          if (stack) {
+            logMessage += `\n${stack}`;
+          }
 
           // 如果有额外的元数据，则添加到日志中
           if (Object.keys(metadata).length > 0) {
-            // 避免重复输出 message 字段
-            if (metadata['message'] !== message) {
-              logMessage += `\n${JSON.stringify(metadata, null, 2)}`;
-            }
+            logMessage += `\n${JSON.stringify(metadata, null, 2)}`;
           }
 
           return logMessage;
@@ -41,7 +45,25 @@ export class LoggerService {
       transports: [
         // 控制台输出配置
         new transports.Console({
-          format: format.combine(format.colorize(), format.simple()),
+          format: format.combine(
+            format.colorize(),
+            format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+            format.printf(({ message, timestamp, level, stack, ...metadata }) => {
+              let logMessage = `${String(timestamp)} [${String(level).toUpperCase()}]: ${String(message)}`;
+
+              // 如果有错误堆栈信息，则添加到日志中
+              if (stack) {
+                logMessage += `\n${stack}`;
+              }
+
+              // 如果有额外的元数据，则添加到日志中
+              if (Object.keys(metadata).length > 0) {
+                logMessage += `\n${JSON.stringify(metadata, null, 2)}`;
+              }
+
+              return logMessage;
+            }),
+          ),
         }),
 
         // 每日轮转文件配置
@@ -56,9 +78,22 @@ export class LoggerService {
 
           // 文件日志格式
           format: format.combine(
-            format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-            format.printf(({ timestamp, level, message, ...meta }) => {
-              return `${String(timestamp)} ${String(level)}: ${String(message)} ${Object.keys(meta).length ? JSON.stringify(meta) : ''}`;
+            format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss.SSS' }),
+            format.errors({ stack: true }),
+            format.printf(({ timestamp, level, message, stack, ...meta }) => {
+              let logMessage = `${String(timestamp)} [${String(level).toUpperCase()}]: ${String(message)}`;
+
+              // 如果有错误堆栈信息，则添加到日志中
+              if (stack) {
+                logMessage += `\n${stack}`;
+              }
+
+              // 如果有额外的元数据，则添加到日志中
+              if (Object.keys(meta).length > 0) {
+                logMessage += `\n${JSON.stringify(meta, null, 2)}`;
+              }
+
+              return logMessage;
             }),
           ),
         }),
@@ -70,18 +105,13 @@ export class LoggerService {
    * 记录日志（通用方法）
    *
    * @param message 日志消息
-   * @param params 可选的额外参数
+   * @param optionalParams 可选的额外参数
    */
-  log(message: string, params: object = {}): void {
-    if (typeof params === 'object' && Object.keys(params).length > 0) {
-      const logMessage = {
-        message,
-        ...params,
-        level: 'info',
-      };
-      this.logger.log(logMessage);
+  log(message: any, ...optionalParams: any[]): void {
+    if (typeof message === 'string') {
+      this.logger.info(message, ...optionalParams);
     } else {
-      this.logger.log({ message, level: 'info' });
+      this.logger.info('Log message:', message, ...optionalParams);
     }
   }
 
@@ -89,39 +119,77 @@ export class LoggerService {
    * 记录错误级别日志
    *
    * @param message 日志消息
-   * @param params 可选的额外参数
+   * @param optionalParams 可选的额外参数，可以包含错误堆栈和上下文信息
    */
-  error(message: string, params?: any): void {
-    this.logger.error(message, { params });
+  error(message: any, ...optionalParams: any[]): void {
+    // 处理不同的参数组合
+    if (optionalParams.length >= 2) {
+      // 假设格式为 error(message, stack, context)
+      const [stack, context] = optionalParams;
+      this.logger.error(message, { stack, context });
+    } else if (optionalParams.length === 1) {
+      // 可能是堆栈或上下文
+      const param = optionalParams[0];
+      this.logger.error(message, { param });
+    } else {
+      // 没有额外参数
+      this.logger.error(message);
+    }
   }
 
   /**
    * 记录警告级别日志
    *
    * @param message 日志消息
-   * @param params 可选的额外参数
+   * @param optionalParams 可选的额外参数
    */
-  warn(message: string, params?: any): void {
-    this.logger.warn(message, { params });
+  warn(message: any, ...optionalParams: any[]): void {
+    if (typeof message === 'string') {
+      this.logger.warn(message, ...optionalParams);
+    } else {
+      this.logger.warn('Warning message:', message, ...optionalParams);
+    }
   }
 
   /**
    * 记录信息级别日志
    *
    * @param message 日志消息
-   * @param params 可选的额外参数
+   * @param optionalParams 可选的额外参数
    */
-  info(message: string, params?: any): void {
-    this.logger.info(message, { params });
+  info(message: any, ...optionalParams: any[]): void {
+    if (typeof message === 'string') {
+      this.logger.info(message, ...optionalParams);
+    } else {
+      this.logger.info('Info message:', message, ...optionalParams);
+    }
   }
 
   /**
    * 记录调试级别日志
    *
    * @param message 日志消息
-   * @param params 可选的额外参数
+   * @param optionalParams 可选的额外参数
    */
-  debug(message: string, params?: any): void {
-    this.logger.debug(message, { params });
+  debug?(message: any, ...optionalParams: any[]): void {
+    if (typeof message === 'string') {
+      this.logger.debug(message, ...optionalParams);
+    } else {
+      this.logger.debug('Debug message:', message, ...optionalParams);
+    }
+  }
+
+  /**
+   * 记录详细级别日志
+   *
+   * @param message 日志消息
+   * @param optionalParams 可选的额外参数
+   */
+  verbose?(message: any, ...optionalParams: any[]): void {
+    if (typeof message === 'string') {
+      this.logger.verbose(message, ...optionalParams);
+    } else {
+      this.logger.verbose('Verbose message:', message, ...optionalParams);
+    }
   }
 }
