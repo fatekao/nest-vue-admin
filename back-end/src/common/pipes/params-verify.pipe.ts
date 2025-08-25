@@ -68,10 +68,6 @@ export class ParamsVerifyPipe implements PipeTransform {
       return { property, constraints };
     });
 
-    console.log('@@@@@@@@@@@@@@@@@@@@@@');
-    console.log(formattedErrors);
-    console.log(errors);
-
     // 返回统一的错误响应格式
     return {
       code: HttpStatus.BAD_REQUEST,
