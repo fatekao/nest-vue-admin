@@ -1,6 +1,28 @@
-import { OmitType, ApiProperty } from '@nestjs/swagger';
+import { OmitType, ApiProperty, PickType } from '@nestjs/swagger';
 import { PaginationDto } from '@/common/dto/pagination.dto';
-import { IsString, IsEmail, IsInt, IsBoolean, IsOptional, IsNotEmpty, Matches } from 'class-validator';
+import { IsString, IsEmail, IsInt, IsBoolean, IsOptional, IsNotEmpty, Matches, IsArray } from 'class-validator';
+
+export class UserIdDto {
+  @ApiProperty({ description: '用户ID', example: 1 })
+  @IsInt()
+  @IsNotEmpty()
+  id: number;
+}
+
+export class updateUserPwdDto extends UserIdDto {
+  @ApiProperty({ description: '密码', example: '123456' })
+  @IsString()
+  @IsNotEmpty()
+  oldPassword: string;
+
+  @ApiProperty({ description: '新密码', example: '123456' })
+  @IsString()
+  @IsNotEmpty()
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/, {
+    message: '密码至少8位，需包含大小写字母、数字和特殊字符',
+  })
+  newPassword: string;
+}
 
 // 新增用户
 export class CreateUserDto {
@@ -46,23 +68,23 @@ export class CreateUserDto {
   status?: number;
 
   @ApiProperty({ description: '角色', example: 1, required: false })
-  @IsInt()
+  @IsArray()
   @IsOptional()
-  role?: number;
+  role?: number[];
 }
 
 // 更新用户
 export class UpdateUserDto extends OmitType(CreateUserDto, ['username', 'password'] as const) {
   @ApiProperty({ description: '用户ID', example: 1 })
   @IsInt()
-  userId: number;
+  id: number;
 }
 
 // 重置密码
 export class ResetUserPwdDto {
   @ApiProperty({ description: '用户ID', required: true, example: 1 })
   @IsNotEmpty()
-  userId: number;
+  id: number;
 
   @ApiProperty({ description: '新密码', required: true, example: 'newPassword123' })
   @IsNotEmpty()
@@ -74,7 +96,7 @@ export class UpdateUserPwdDto {
   @ApiProperty({ description: '用户ID', required: true, example: 1 })
   @IsInt()
   @IsNotEmpty()
-  userId: number;
+  id: number;
 
   @ApiProperty({ description: '旧密码', required: true, example: 'oldPassword123' })
   @IsString()

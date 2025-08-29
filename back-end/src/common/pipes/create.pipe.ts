@@ -9,9 +9,11 @@ export class CreatePipe implements PipeTransform {
   constructor(@Inject(REQUEST) private readonly request: AuthenticatedRequest) {}
 
   transform(value: AuditDto, metadata: ArgumentMetadata) {
+    console.log('########createPipe############', this.request.user);
     const user: SysUser = this.request.user;
-    value.createBy = user.userId;
+    value.createBy = user.id;
     value.createTime = dayjs().format();
+    console.log('########createPipe############', value);
     return value;
   }
 }

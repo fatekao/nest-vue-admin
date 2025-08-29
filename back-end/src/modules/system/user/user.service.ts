@@ -1,6 +1,5 @@
 import { Body, Injectable, NotFoundException, UnauthorizedException, ConflictException } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto, UserPageRequeryDto } from './dto/req-user.dto';
-import { CreatePipe } from '@/common/pipes/create.pipe';
 
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { RedisService } from '@/shared/redis/redis.service';
@@ -16,7 +15,7 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
   ) {}
-  async create(@Body(CreatePipe) createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto) {
     const salt = await bcrypt.genSalt(this.SALT_ROUNDS);
     const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
 
@@ -31,16 +30,28 @@ export class UserService {
       });
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException('邮箱已被注册');
+        const targetField = error.meta?.target;
+
+        let message = '该信息已被注册';
+        if (typeof targetField === 'string') {
+          if (targetField.includes('username')) {
+            message = '用户名已被注册';
+          } else if (targetField.includes('email')) {
+            message = '邮箱已被注册';
+          } else if (targetField.includes('phone')) {
+            message = '手机号已被注册';
+          }
+        }
+        throw new ConflictException(message);
       }
       throw error;
     }
   }
 
-  async setPassword(userId: number, newPassword: string) {
+  async resetPassword(id: number) {
     const user = await this.prisma.sysUser.findUnique({
       where: {
-        userId,
+        id,
       },
     });
     if (!user) {
@@ -48,24 +59,23 @@ export class UserService {
     }
 
     const salt = await bcrypt.genSalt(this.SALT_ROUNDS);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    const hashedPassword = await bcrypt.hash('Pw123456', salt);
 
     await this.prisma.sysUser.update({
       where: {
-        userId,
+        id,
       },
       data: {
         password: hashedPassword,
-        updateTime: new Date(),
       },
     });
-    const cacheKey = `user:${userId}`;
+    const cacheKey = `user:${id}`;
     await this.redis.del(cacheKey); // 删除缓存
-    return { message: '密码已更新' };
+    return '密码已更新';
   }
 
-  async updatePassword(userId: number, oldPassword: string, newPassword: string) {
-    const user = await this.prisma.sysUser.findUnique({ where: { userId } });
+  async updatePassword(id: number, oldPassword: string, newPassword: string) {
+    const user = await this.prisma.sysUser.findUnique({ where: { id } });
     if (!user) {
       throw new NotFoundException('用户不存在');
     }
@@ -78,20 +88,19 @@ export class UserService {
     const salt = await bcrypt.genSalt(this.SALT_ROUNDS);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
     await this.prisma.sysUser.update({
-      where: { userId },
+      where: { id },
       data: {
         password: hashedPassword,
         updateTime: new Date(),
       },
     });
 
-    const cacheKey = `user:${userId}`;
+    const cacheKey = `user:${id}`;
     await this.redis.del(cacheKey);
     return true;
   }
 
   async findPage(query: UserPageRequeryDto) {
-    console.log('######query######', query);
     const { username, roleId, page, pageSize } = query;
     const where: {
       isDeleted?: boolean;
@@ -135,8 +144,8 @@ export class UserService {
     };
   }
 
-  async findOne(userId: number) {
-    const cacheKey = `user:${userId}`;
+  async findOne(id: number) {
+    const cacheKey = `user:${id}`;
     const cacheUser = await this.redis.get(cacheKey);
     if (cacheUser) {
       return cacheUser;
@@ -144,7 +153,7 @@ export class UserService {
 
     const user = await this.prisma.sysUser.findUnique({
       where: {
-        userId,
+        id,
         isDeleted: false,
       },
     });
@@ -164,12 +173,12 @@ export class UserService {
   }
 
   async update(updateUserDto: UpdateUserDto) {
-    const { userId, ...updateData } = updateUserDto;
-    
+    const { id, ...updateData } = updateUserDto;
+
     try {
       return await this.prisma.sysUser.update({
         where: {
-          userId,
+          id,
         },
         data: updateData,
       });
@@ -181,10 +190,10 @@ export class UserService {
     }
   }
 
-  remove(userId: number) {
+  remove(id: number) {
     return this.prisma.sysUser.update({
       where: {
-        userId,
+        id,
       },
       data: {
         isDeleted: true,

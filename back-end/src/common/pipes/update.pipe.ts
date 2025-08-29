@@ -10,7 +10,7 @@ export class CreatePipe implements PipeTransform {
 
   transform(value: AuditDto, metadata: ArgumentMetadata) {
     const user: SysUser = this.request.user;
-    value.updateBy = user.userId;
+    value.updateBy = user.id;
     value.updateTime = dayjs().format();
     return value;
   }

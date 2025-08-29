@@ -15,8 +15,8 @@ export default registerAs('jwt', (): JwtConfig => {
   const expiresIn = process.env.JWT_EXPIRES_IN;
   const refreshSecret = process.env.JWT_REFRESH_SECRET;
   const refreshExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN;
-  const cookieSecure = Boolean(process.env.JWT_COOKIE_SECURE);
-  const cookieHttpOnly = Boolean(process.env.JWT_COOKIE_HTTP_ONLY);
+  const cookieSecure = process.env.JWT_COOKIE_SECURE === 'true';
+  const cookieHttpOnly = process.env.JWT_COOKIE_HTTP_ONLY === 'true';
 
   if (!secret) {
     throw new Error('JWT_SECRET environment variable is required');
@@ -34,20 +34,15 @@ export default registerAs('jwt', (): JwtConfig => {
     throw new Error('JWT_REFRESH_EXPIRES_IN environment variable is required');
   }
 
-  if (!cookieSecure) {
-    throw new Error('JWT_COOKIE_SECURE environment variable is required');
-  }
-
-  if (!cookieHttpOnly) {
-    throw new Error('JWT_COOKIE_HTTP_ONLY environment variable is required');
-  }
+  // 对于布尔值变量，我们使用默认值而不是强制要求
+  // 因为它们通常有合理的默认值
 
   return {
     secret,
     expiresIn,
     refreshSecret,
     refreshExpiresIn,
-    cookieSecure,
-    cookieHttpOnly,
+    cookieSecure: cookieSecure ?? false,
+    cookieHttpOnly: cookieHttpOnly ?? true,
   };
 });

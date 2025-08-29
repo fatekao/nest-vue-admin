@@ -3,7 +3,12 @@ import { PrismaService } from '@/shared/prisma/prisma.service';
 import { RedisService } from '@/shared/redis/redis.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { User } from '@/modules/system/user/entities/user.entity';
+import { UserEntity } from '@/modules/system/user/entities/user.entity';
+import { ConfigService } from '@nestjs/config';
+import { JwtConfig } from '@/config/jwt.config';
+import { arrayToTree } from '@/utils/treeData';
+import { AuthUserInfoDto } from './dto/res-auth.dto';
+import { MenuListResDto, MenuTreeResDto } from '../system/menu/dto/res-menu.dto';
 
 /**
  * 认证服务类
@@ -11,16 +16,11 @@ import { User } from '@/modules/system/user/entities/user.entity';
  */
 @Injectable()
 export class AuthService {
-  /**
-   * 构造函数
-   * @param prisma - Prisma数据库服务
-   * @param redis - Redis缓存服务
-   * @param jwtService - JWT服务
-   */
   constructor(
     private readonly prisma: PrismaService,
     private readonly redis: RedisService,
     private readonly jwt: JwtService,
+    private readonly config: ConfigService,
   ) {}
 
   /**
@@ -31,7 +31,7 @@ export class AuthService {
    * @returns Promise<User> - 验证成功的用户信息
    * @throws UnauthorizedException - 当用户不存在、密码错误或用户状态异常时抛出
    */
-  async validateUser(username: string, pass: string): Promise<User> {
+  async validateUser(username: string, pass: string): Promise<UserEntity> {
     // 查询用户信息，确保用户未被删除且处于激活状态
     const user = await this.prisma.sysUser.findUnique({
       where: {
@@ -45,14 +45,13 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('用户不存在');
 
     const { password, ...result } = user;
-    console.log(username, pass, password);
 
     // 用户密码未设置时抛出异常
     if (!password) throw new UnauthorizedException('用户密码未设置');
 
     // 验证密码是否匹配
-    const isMatch = await bcrypt.compare(password, pass);
-    if (!isMatch) throw new UnauthorizedException('用户名或密码错误2222');
+    const isMatch = await bcrypt.compare(pass, password);
+    if (!isMatch) throw new UnauthorizedException('用户名或密码错误');
 
     return result;
   }
@@ -64,7 +63,7 @@ export class AuthService {
    * @param user - 已验证的用户信息
    * @returns Promise<{ accessToken: string }> - 包含访问令牌的响应对象
    */
-  async signIn(user: User): Promise<{ accessToken: string }> {
+  async signIn(user: UserEntity): Promise<{ accessToken: string }> {
     // 构造JWT payload数据
     const payload = {
       username: user.username,
@@ -72,7 +71,8 @@ export class AuthService {
     };
 
     // 生成JWT token，设置7天过期时间
-    const token = this.jwt.sign(payload, { expiresIn: '7d' });
+    const jwtConfig = this.config.get<JwtConfig>('jwt');
+    const token = this.jwt.sign(payload, { expiresIn: jwtConfig?.expiresIn });
 
     // 将token存入Redis，过期时间与JWT同步（7天）
     await this.redis.set(`${payload.username}&${payload.userId}`, `Bearer ${token}`, 60 * 60 * 24 * 7); // 7天过期
@@ -92,41 +92,72 @@ export class AuthService {
   /**
    * 根据用户ID获取用户信息
    * 用于已通过JWT验证后获取用户详细信息
-   * @param userId - 用户ID
+   * @param id - 用户ID
    * @returns Promise<User | null> - 用户信息或null
    * @throws UnauthorizedException - 当用户不存在或状态异常时抛出
    */
-  async getUserInfo(userId: number): Promise<User | null> {
-    try {
-      // 获取用户信息，确保用户未被删除且处于激活状态
-      const user = await this.prisma.sysUser.findUnique({
-        where: { userId },
-        include: {
-          roles: {
-            where: { isDeleted: false, status: 0 }, // 确保角色未被删除
-            include: {
-              menus: {
-                where: { isDeleted: false }, // 确保菜单未被删除
-                orderBy: { orderNum: 'asc' },
-              },
+  async getUserInfo(id: number): Promise<AuthUserInfoDto> {
+    // 获取用户信息，确保用户未被删除且处于激活状态
+    const user = await this.prisma.sysUser.findUnique({
+      where: { id },
+      include: {
+        roles: {
+          where: { isDeleted: false, status: 0 }, // 确保角色未被删除
+          include: {
+            permissions: {
+              where: { isDeleted: false }, // 确保菜单未被删除
+              orderBy: { orderNum: 'asc' },
             },
           },
         },
-      });
+      },
+    });
 
-      // 用户不存在时抛出异常
-      if (!user) {
-        throw new UnauthorizedException('用户不存在');
-      }
-
-      const userInfo = {
-        ...user,
-        buttons: [],
-      };
-      return userInfo;
-    } catch (error: any) {
-      console.error('Get user info error:', error);
-      throw error;
+    // 用户不存在时抛出异常
+    if (!user) {
+      throw new UnauthorizedException('用户不存在');
     }
+
+    // 收集用户的按钮权限和路由
+    const buttons: string[] = [];
+    const menus: MenuListResDto[] = [];
+    const menuSet = new Set<number>();
+
+    // 遍历用户的角色和菜单
+    user.roles?.forEach((role) => {
+      role.permissions?.forEach((permission) => {
+        // 使用Set确保菜单不重复
+        if (!menuSet.has(permission.id)) {
+          menuSet.add(permission.id);
+
+          // 如果菜单有路径，则认为是路由
+          if (permission.path) {
+            menus.push({
+              id: permission.id,
+              name: permission.name,
+              path: permission.path,
+              component: permission.component,
+              icon: permission.icon,
+              isCacheable: permission.isCacheable,
+              isVisible: permission.isVisible,
+              orderNum: permission.orderNum,
+              parentId: permission.parentId,
+            });
+          }
+        }
+      });
+    });
+
+    // 去除密码字段并添加按钮和路由信息
+    const { password, ...userInfo } = user;
+
+    const menusTree = arrayToTree(menus, { idKey: 'id', parentIdKey: 'parentId' });
+
+    return {
+      ...userInfo,
+      roles: [],
+      menus: menusTree,
+      buttons,
+    };
   }
 }

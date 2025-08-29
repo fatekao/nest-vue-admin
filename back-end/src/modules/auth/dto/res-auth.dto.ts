@@ -1,6 +1,6 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Matches, MaxLength, MinLength } from 'class-validator';
-import { UserInfoDto } from '@/modules/system/user/dto/res-user.dto';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
+import { UserInfoResDto } from '@/modules/system/user/dto/res-user.dto';
+import { MenuTreeResDto } from '@/modules/system/menu/dto/res-menu.dto';
 
 /**
  * 用户认证数据传输对象
@@ -11,7 +11,15 @@ export class LoginTokenDto {
   token: string;
 }
 
-export class AuthUserInfoDto extends UserInfoDto {
-  @ApiProperty({ description: '用户角色' })
-  roles: string[];
+export class AuthUserInfoDto extends OmitType(UserInfoResDto, [
+  'createBy',
+  'updateBy',
+  'createTime',
+  'updateTime',
+] as const) {
+  @ApiProperty({ description: '用户权限' })
+  buttons: string[];
+
+  @ApiProperty({ description: '用户菜单' })
+  menus: MenuTreeResDto[];
 }
