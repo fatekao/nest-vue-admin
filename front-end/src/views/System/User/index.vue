@@ -44,6 +44,6 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 * {
-  color: #42b883;
+  color: #00658d;
 }
 </style>
