@@ -7,4 +7,6 @@ import router from '@/router'
 import pinia from '@/store'
 import plugins from '@/plugins'
 
+import '@/permission'
+
 createApp(App).use(router).use(pinia).use(plugins).mount('#app')

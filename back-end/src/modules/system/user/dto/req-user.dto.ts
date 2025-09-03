@@ -1,6 +1,19 @@
-import { OmitType, ApiProperty, PickType } from '@nestjs/swagger';
+import { OmitType, ApiProperty } from '@nestjs/swagger';
 import { PaginationDto } from '@/common/dto/pagination.dto';
-import { IsString, IsEmail, IsInt, IsBoolean, IsOptional, IsNotEmpty, Matches, IsArray } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  IsInt,
+  IsBoolean,
+  IsOptional,
+  IsNotEmpty,
+  Matches,
+  IsArray,
+  IsEnum,
+  Length,
+  IsMobilePhone,
+} from 'class-validator';
+import { UserStatus, Gender } from '@/common/enums';
 
 export class UserIdDto {
   @ApiProperty({ description: '用户ID', example: 1 })
@@ -26,12 +39,13 @@ export class updateUserPwdDto extends UserIdDto {
 
 // 新增用户
 export class CreateUserDto {
-  @ApiProperty({ description: '用户名', example: 'admin' })
+  @ApiProperty({ description: '用户名，长度3-20位', example: 'admin' })
   @IsString()
   @IsNotEmpty()
+  @Length(3, 20, { message: '用户名长度必须在3-20位之间' })
   username: string;
 
-  @ApiProperty({ description: '密码', example: '123456' })
+  @ApiProperty({ description: '密码，至少8位，包含大小写字母、数字和特殊字符', example: 'Password123!' })
   @IsString()
   @IsNotEmpty()
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/, {
@@ -39,38 +53,42 @@ export class CreateUserDto {
   })
   password: string;
 
-  @ApiProperty({ description: '昵称', example: '管理员' })
+  @ApiProperty({ description: '昵称，长度1-50位', example: '管理员' })
   @IsString()
   @IsNotEmpty()
+  @Length(1, 50, { message: '昵称长度必须在1-50位之间' })
   nickName: string;
 
-  @ApiProperty({ description: '性别', example: 1, required: false })
-  @IsInt()
+  @ApiProperty({ description: '性别：0-女，1-男', example: 1, required: false, enum: Gender })
+  @IsEnum(Gender, { message: '性别只能为0(女)或1(男)' })
   @IsOptional()
-  gender?: number;
+  gender?: Gender;
 
   @ApiProperty({ description: '邮箱', example: 'admin@example.com' })
-  @IsEmail()
+  @IsEmail({}, { message: '邮箱格式不正确' })
+  @IsNotEmpty()
   email: string;
 
   @ApiProperty({ description: '手机号', example: '13800000000' })
-  @IsString()
+  @IsMobilePhone('zh-CN', {}, { message: '手机号格式不正确' })
+  @IsNotEmpty()
   phone: string;
 
-  @ApiProperty({ description: '头像', example: '', required: false })
+  @ApiProperty({ description: '头像地址', example: '', required: false })
   @IsString()
   @IsOptional()
   avatar?: string;
 
-  @ApiProperty({ description: '状态', example: 1, required: false })
-  @IsInt()
+  @ApiProperty({ description: '状态：0-禁用，1-正常，2-锁定', example: 1, required: false, enum: UserStatus })
+  @IsEnum(UserStatus, { message: '状态值不正确' })
   @IsOptional()
-  status?: number;
+  status?: UserStatus;
 
-  @ApiProperty({ description: '角色', example: 1, required: false })
+  @ApiProperty({ description: '角色ID列表', example: [1, 2], required: false })
   @IsArray()
+  @IsInt({ each: true, message: '角色ID必须为整数' })
   @IsOptional()
-  role?: number[];
+  roleIds?: number[];
 }
 
 // 更新用户

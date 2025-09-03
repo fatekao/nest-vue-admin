@@ -20,6 +20,6 @@ export class AuthUserInfoDto extends OmitType(UserInfoResDto, [
   @ApiProperty({ description: '用户权限' })
   buttons: string[];
 
-  @ApiProperty({ description: '用户菜单' })
+  @ApiProperty({ description: '用户菜单', type: [MenuTreeResDto] })
   menus: MenuTreeResDto[];
 }

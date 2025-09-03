@@ -1,6 +1,5 @@
 import { createParamDecorator, SetMetadata, ExecutionContext } from '@nestjs/common';
 import { Request } from 'express';
-import { SysUser } from '@prisma/client';
 
 /**
  * 公共路由标识键值
@@ -15,8 +14,8 @@ export const IS_PUBLIC_KEY = 'isPublic';
  */
 export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
-export const CurrentUser = createParamDecorator((data: keyof SysUser, ctx: ExecutionContext) => {
+export const CurrentUser = createParamDecorator((data: keyof JWTPayload, ctx: ExecutionContext) => {
   const request = ctx.switchToHttp().getRequest<Request>();
-  const user = request.user as Partial<SysUser>;
+  const user = request.user as JWTPayload;
   return data ? user[data] : user;
 });

@@ -65,9 +65,10 @@ export class AuthService {
    */
   async signIn(user: UserEntity): Promise<{ accessToken: string }> {
     // 构造JWT payload数据
-    const payload = {
+    const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
+      userId: user.id,
       username: user.username,
-      userId: user.userId,
+      roleIds: user.roles?.map((role) => role.id) || [],
     };
 
     // 生成JWT token，设置7天过期时间
@@ -82,11 +83,12 @@ export class AuthService {
   /**
    * 用户登出处理
    * 从Redis中删除用户的token
-   * @param username - 用户名
+   * @param payload - JWT载荷信息
    * @returns Promise<void>
    */
-  async signOut(username: string): Promise<void> {
-    await this.redis.del(username);
+  async signOut(payload: Pick<JWTPayload, 'username' | 'userId'>): Promise<void> {
+    const redisKey = `${payload.username}&${payload.userId}`;
+    await this.redis.del(redisKey);
   }
 
   /**
@@ -99,7 +101,11 @@ export class AuthService {
   async getUserInfo(id: number): Promise<AuthUserInfoDto> {
     // 获取用户信息，确保用户未被删除且处于激活状态
     const user = await this.prisma.sysUser.findUnique({
-      where: { id },
+      where: {
+        id,
+        isDeleted: false,
+        status: 1, // 确保用户状态正常
+      },
       include: {
         roles: {
           where: { isDeleted: false, status: 0 }, // 确保角色未被删除
@@ -149,9 +155,9 @@ export class AuthService {
     });
 
     // 去除密码字段并添加按钮和路由信息
-    const { password, ...userInfo } = user;
+    const { password: _password, ...userInfo } = user;
 
-    const menusTree = arrayToTree(menus, { idKey: 'id', parentIdKey: 'parentId' });
+    const menusTree: MenuTreeResDto[] = arrayToTree(menus, { idKey: 'id', parentIdKey: 'parentId' });
 
     return {
       ...userInfo,

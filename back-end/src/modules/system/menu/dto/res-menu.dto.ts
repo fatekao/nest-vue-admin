@@ -1,4 +1,3 @@
-import { AuditDto } from '@/common/dto/audit.dto';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class MenuListResDto {
@@ -31,6 +30,6 @@ export class MenuListResDto {
 }
 
 export class MenuTreeResDto extends MenuListResDto {
-  @ApiProperty({ description: '子级菜单' })
+  @ApiProperty({ description: '子级菜单', type: [MenuTreeResDto] })
   children?: MenuTreeResDto[];
 }

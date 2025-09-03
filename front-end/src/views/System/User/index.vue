@@ -41,3 +41,9 @@ onMounted(() => {
     <FtTable :data="table.data" :columns="table.columns" :actions="table.actions" :searchs="table.searchs"></FtTable>
   </FtCard>
 </template>
+
+<style lang="scss" scoped>
+* {
+  color: #42b883;
+}
+</style>

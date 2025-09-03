@@ -16,73 +16,126 @@ datasource db {
 // ==================== 用户表 ====================
 // 存储系统用户的基本信息
 model SysUser {
-  id              Int        @id @default(autoincrement()) @map("user_id")                                           // 用户ID，主键，自增
-  username        String     @unique @map("username")                                                                  // 用户名，唯一
-  password        String     @map("password")                                                                           // 密码（应为加密后的哈希值）
-  nickName        String     @map("nick_name")                                                                         // 昵称
-  gender          Int?       @default(1) @map("gender")                                                                // 性别：1-男，0-女 (或使用枚举)
-  email           String?    @unique @map("email")                                                                     // 邮箱，唯一
-  phone           String?    @unique @map("phone")                                                                     // 手机号，唯一
-  avatar          String?    @map("avatar")                                                                            // 头像URL
-  status          Int?       @default(1) @map("status")                                                                // 状态：0-禁用，1-正常，2-锁定
-  isDeleted       Boolean?   @default(false) @map("is_deleted")                                                        // 删除标志：false-未删除，true-已删除 (软删除)
-  lastLoginIp     String?    @map("last_login_ip")                                                                     // 最后一次登录IP地址
-  lastLoginTime   DateTime?  @map("last_login_time")                                                                   // 最后一次登录时间
-  remark          String?    @map("remark")                                                                            // 备注信息
-  createTime      DateTime?  @default(now()) @map("create_time")                                                       // 创建时间，默认当前时间
-  updateTime      DateTime?  @updatedAt @map("update_time")                                                            // 最后更新时间，自动更新
-  createBy        Int?       @map("create_by")                                                                         // 创建者用户ID (关联 SysUser.id)
-  updateBy        Int?       @map("update_by")                                                                         // 最后更新者用户ID (关联 SysUser.id)
+  id            Int       @id @default(autoincrement()) @map("user_id") // 用户ID，主键，自增
+  username      String    @unique @map("username") @db.VarChar(50) // 用户名，唯一，限制长度
+  password      String    @map("password") @db.VarChar(255) // 密码（应为加密后的哈希值），增加长度限制
+  nickName      String    @map("nick_name") @db.VarChar(50) // 昵称，限制长度
+  gender        Int?      @default(1) @map("gender") @db.TinyInt // 性别：1-男，0-女，使用 TinyInt 节省空间
+  email         String?   @unique @map("email") @db.VarChar(100) // 邮箱，唯一，限制长度
+  phone         String?   @unique @map("phone") @db.VarChar(20) // 手机号，唯一，限制长度
+  avatar        String?   @map("avatar") @db.VarChar(500) // 头像URL，限制长度
+  status        Int?      @default(1) @map("status") @db.TinyInt // 状态：0-禁用，1-正常，2-锁定，使用 TinyInt
+  isDeleted     Boolean?  @default(false) @map("is_deleted") // 删除标志：false-未删除，true-已删除 (软删除)
+  lastLoginIp   String?   @map("last_login_ip") @db.VarChar(45) // 最后一次登录IP地址，IPv6最大长度45
+  lastLoginTime DateTime? @map("last_login_time") // 最后一次登录时间
+  remark        String?   @map("remark") @db.Text // 备注信息，使用 Text 类型
+  createTime    DateTime? @default(now()) @map("create_time") // 创建时间，默认当前时间
+  updateTime    DateTime? @updatedAt @map("update_time") // 最后更新时间，自动更新
+  createBy      Int?      @map("create_by") // 创建者用户ID (关联 SysUser.id)
+  updateBy      Int?      @map("update_by") // 最后更新者用户ID (关联 SysUser.id)
 
-  roles           SysRole[] // 用户与角色的多对多关系 (通过隐式中间表 sys_user_roles)
+  roles SysRole[] // 用户与角色的多对多关系 (通过隐式中间表 sys_user_roles)
 
+  @@index([status, isDeleted], name: "idx_user_status_deleted") // 状态和删除标志的复合索引
+  @@index([createTime], name: "idx_user_create_time") // 创建时间索引，便于按时间排序
+  @@index([lastLoginTime], name: "idx_user_last_login") // 最后登录时间索引
   @@map("sys_user")
 }
 
 // ==================== 角色表 ====================
 // 存储系统角色信息
 model SysRole {
-  id              Int        @id @default(autoincrement()) @map("role_id")                                             // 角色ID，主键，自增
-  name            String?    @unique @map("name")                                                                      // 角色名称，唯一
-  key             String?    @unique @map("key")                                                                       // 角色权限字符串标识符，唯一 (如 'admin', 'editor')
-  status          Int?       @default(0) @map("status")                                                                // 状态：0-正常，1-停用
-  isDeleted       Boolean?   @default(false) @map("is_deleted")                                                        // 删除标志：false-未删除，true-已删除 (软删除)
-  remark          String?    @map("remark")                                                                            // 备注信息
-  createTime      DateTime?  @default(now()) @map("create_time")                                                       // 创建时间，默认当前时间
-  updateTime      DateTime?  @updatedAt @map("update_time")                                                            // 最后更新时间，自动更新
-  createBy        Int?       @map("create_by")                                                                         // 创建者用户ID (关联 SysUser.id)
-  updateBy        Int?       @map("update_by")                                                                         // 最后更新者用户ID (关联 SysUser.id)
+  id         Int       @id @default(autoincrement()) @map("role_id") // 角色ID，主键，自增
+  name       String?   @unique @map("name") @db.VarChar(50) // 角色名称，唯一，限制长度
+  key        String?   @unique @map("key") @db.VarChar(50) // 角色权限字符串标识符，唯一，限制长度
+  status     Int?      @default(0) @map("status") @db.TinyInt // 状态：0-正常，1-停用，使用 TinyInt
+  isDeleted  Boolean?  @default(false) @map("is_deleted") // 删除标志：false-未删除，true-已删除 (软删除)
+  remark     String?   @map("remark") @db.Text // 备注信息，使用 Text 类型
+  createTime DateTime? @default(now()) @map("create_time") // 创建时间，默认当前时间
+  updateTime DateTime? @updatedAt @map("update_time") // 最后更新时间，自动更新
+  createBy   Int?      @map("create_by") // 创建者用户ID (关联 SysUser.id)
+  updateBy   Int?      @map("update_by") // 最后更新者用户ID (关联 SysUser.id)
 
-  users           SysUser[]    // 角色与用户的多对多关系 (通过隐式中间表 sys_user_roles)
-  permissions     SysPermission[] // 角色与权限资源的多对多关系 (通过隐式中间表 sys_role_permissions)
+  users       SysUser[] // 角色与用户的多对多关系 (通过隐式中间表 sys_user_roles)
+  permissions SysPermission[] // 角色与权限资源的多对多关系 (通过隐式中间表 sys_role_permissions)
 
+  @@index([status, isDeleted], name: "idx_role_status_deleted") // 状态和删除标志的复合索引
   @@map("sys_role")
 }
 
 // ==================== 权限资源表 ====================
 // 存储菜单、按钮等所有需要进行权限控制的系统资源
 model SysPermission {
-  id              Int        @id @default(autoincrement()) @map("permission_id")                                       // 权限资源ID，主键，自增
-  name            String     @map("name")                                                                              // 权限资源名称 (如 '用户管理', '新增用户')
-  type            Int        @default(0) @map("type")                                                                  // 权限资源类型: 0-目录, 1-菜单, 2-按钮(权限点)
-  parentId        Int?       @default(0) @map("parent_id")                                                             // 父级权限资源ID，指向自身表的 id 字段，0 表示顶级资源
-  parent          SysPermission? @relation("PermissionChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction) // 自关联：父级资源 (导航关系)
-  children        SysPermission[] @relation("PermissionChildren")                                                       // 自关联：子级资源列表 (导航关系)
-  path            String?    @map("path")                                                                              // 路由路径 (主要用于 type=1 的菜单)
-  component       String?    @map("component")                                                                         // 组件路径 (主要用于 type=1 的菜单，前端框架使用)
-  icon            String?    @map("icon")                                                                              // 图标 (主要用于 type=0/1 的目录/菜单)
-  permission      String?    @unique @map("permission")                                                                // 权限字符串标识符，唯一 (如 'sys:user:list', 'sys:user:create') - 核心权限控制字段
-  orderNum        Int        @default(0) @map("order_num")                                                             // 显示顺序
-  isVisible       Boolean    @default(true) @map("is_visible")                                                         // 是否可见 (主要用于控制菜单是否显示)
-  isCacheable     Boolean    @default(true) @map("is_cacheable")                                                       // 是否可缓存 (主要用于前端控制页面缓存)
-  isDeleted       Boolean    @default(false) @map("is_deleted")                                                        // 删除标志：false-未删除，true-已删除 (软删除)
-  createTime      DateTime?  @default(now()) @map("create_time")                                                       // 创建时间，默认当前时间
-  updateTime      DateTime?  @updatedAt @map("update_time")                                                            // 最后更新时间，自动更新
-  createBy        Int?       @map("create_by")                                                                         // 创建者用户ID (关联 SysUser.id)
-  updateBy        Int?       @map("update_by")                                                                         // 最后更新者用户ID (关联 SysUser.id)
+  id          Int             @id @default(autoincrement()) @map("permission_id") // 权限资源ID，主键，自增
+  name        String          @map("name") @db.VarChar(100) // 权限资源名称，限制长度
+  type        Int             @default(0) @map("type") @db.TinyInt // 权限资源类型，使用 TinyInt
+  parentId    Int?            @default(0) @map("parent_id") // 父级权限资源ID，指向自身表的 id 字段，0 表示顶级资源
+  parent      SysPermission?  @relation("PermissionChildren", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction) // 自关联：父级资源 (导航关系)
+  children    SysPermission[] @relation("PermissionChildren") // 自关联：子级资源列表 (导航关系)
+  path        String?         @map("path") @db.VarChar(200) // 路由路径，限制长度
+  component   String?         @map("component") @db.VarChar(200) // 组件路径，限制长度
+  icon        String?         @map("icon") @db.VarChar(100) // 图标，限制长度
+  permission  String?         @unique @map("permission") @db.VarChar(100) // 权限字符串标识符，唯一，限制长度
+  orderNum    Int             @default(0) @map("order_num") @db.SmallInt // 显示顺序，使用 SmallInt
+  isVisible   Boolean         @default(true) @map("is_visible") // 是否可见 (主要用于控制菜单是否显示)
+  isCacheable Boolean         @default(true) @map("is_cacheable") // 是否可缓存 (主要用于前端控制页面缓存)
+  isDeleted   Boolean         @default(false) @map("is_deleted") // 删除标志：false-未删除，true-已删除 (软删除)
+  createTime  DateTime?       @default(now()) @map("create_time") // 创建时间，默认当前时间
+  updateTime  DateTime?       @updatedAt @map("update_time") // 最后更新时间，自动更新
+  createBy    Int?            @map("create_by") // 创建者用户ID (关联 SysUser.id)
+  updateBy    Int?            @map("update_by") // 最后更新者用户ID (关联 SysUser.id)
 
-  roles           SysRole[] // 权限资源与角色的多对多关系 (通过隐式中间表 sys_role_permissions)
+  roles SysRole[] // 权限资源与角色的多对多关系 (通过隐式中间表 sys_role_permissions)
 
+  @@index([parentId], name: "idx_parent_id") // 为 parentId 添加索引以优化查询
+  @@index([type, isDeleted], name: "idx_permission_type_deleted") // 类型和删除标志的复合索引
+  @@index([orderNum, parentId], name: "idx_permission_order_parent") // 排序优化索引
+  @@index([isVisible, type], name: "idx_permission_visible_type") // 菜单显示查询优化
   @@map("sys_permission")
-  @@index([parentId], name: "idx_parent_id") // 为 parentId 添加索引以优化查询 // 定义自关联关系的名称，避免歧义
+}
+
+// ==================== 系统操作日志表 ====================
+// 记录系统重要操作的审计日志
+model SysOperLog {
+  id            Int      @id @default(autoincrement()) @map("oper_id") // 日志ID，主键，自增
+  title         String   @map("title") @db.VarChar(50) // 模块标题
+  businessType  Int      @default(0) @map("business_type") @db.TinyInt // 业务类型：0=其它,1=新增,2=修改,3=删除,4=授权,5=导出,6=导入,7=强退,8=生成代码,9=清空数据
+  method        String?  @map("method") @db.VarChar(100) // 方法名称
+  requestMethod String?  @map("request_method") @db.VarChar(10) // 请求方式
+  operatorType  Int      @default(1) @map("operator_type") @db.TinyInt // 操作类别：0=其它,1=后台用户,2=手机端用户
+  operName      String?  @map("oper_name") @db.VarChar(50) // 操作人员
+  deptName      String?  @map("dept_name") @db.VarChar(50) // 部门名称
+  operUrl       String?  @map("oper_url") @db.VarChar(255) // 请求URL
+  operIp        String?  @map("oper_ip") @db.VarChar(45) // 主机地址
+  operLocation  String?  @map("oper_location") @db.VarChar(255) // 操作地点
+  operParam     String?  @map("oper_param") @db.Text // 请求参数
+  jsonResult    String?  @map("json_result") @db.Text // 返回参数
+  status        Int      @default(0) @map("status") @db.TinyInt // 操作状态：0=正常,1=异常
+  errorMsg      String?  @map("error_msg") @db.Text // 错误消息
+  operTime      DateTime @default(now()) @map("oper_time") // 操作时间
+  costTime      Int      @default(0) @map("cost_time") // 消耗时间(毫秒)
+
+  @@index([operTime], name: "idx_oper_time")
+  @@index([operName], name: "idx_oper_name")
+  @@index([businessType], name: "idx_business_type")
+  @@map("sys_oper_log")
+}
+
+// ==================== 系统登录日志表 ====================
+// 记录用户登录登出信息
+model SysLoginLog {
+  id            Int      @id @default(autoincrement()) @map("info_id") // 访问ID，主键，自增
+  userName      String?  @map("user_name") @db.VarChar(50) // 用户账号
+  ipaddr        String?  @map("ipaddr") @db.VarChar(45) // 登录IP地址
+  loginLocation String?  @map("login_location") @db.VarChar(255) // 登录地点
+  browser       String?  @map("browser") @db.VarChar(50) // 浏览器类型
+  os            String?  @map("os") @db.VarChar(50) // 操作系统
+  status        String   @map("status") @db.Char(1) // 登录状态：0=成功,1=失败
+  msg           String?  @map("msg") @db.VarChar(255) // 提示消息
+  loginTime     DateTime @default(now()) @map("login_time") // 访问时间
+
+  @@index([userName], name: "idx_login_user_name")
+  @@index([loginTime], name: "idx_login_time")
+  @@index([status], name: "idx_login_status")
+  @@map("sys_login_log")
 }

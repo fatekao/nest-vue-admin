@@ -1,4 +1,5 @@
-import { getTokenStorage, getUserInfoStorage } from '@/utils/webStorage'
+import { getTokenStorage, getUserInfoStorage, setTokenStorage } from '@/utils/webStorage'
+import { login } from '@/api/common'
 
 const useUserStore = defineStore('user', {
   state: () => ({
@@ -13,6 +14,19 @@ const useUserStore = defineStore('user', {
     },
     setToken(token) {
       this.token = token
+    },
+    login(data) {
+      return new Promise((resolve, reject) => {
+        login(data)
+          .then((res) => {
+            this.token = res.data.accessToken
+            setTokenStorage(this.token)
+            resolve(res)
+          })
+          .catch((error) => {
+            reject(error)
+          })
+      })
     }
   }
 })
