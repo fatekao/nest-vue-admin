@@ -2,7 +2,7 @@ import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { IsString, IsInt, IsOptional, IsNotEmpty, Length, IsEnum, IsBoolean } from 'class-validator';
 import { PermissionType } from '@/common/enums';
 
-export class CreateMenuDto {
+export class CreatePermissionDto {
   @ApiProperty({ description: '菜单名称，长度1-100位', example: '用户管理' })
   @IsString()
   @IsNotEmpty()
@@ -58,13 +58,13 @@ export class CreateMenuDto {
   isCacheable?: boolean;
 }
 
-export class UpdateMenuDto extends OmitType(CreateMenuDto, [] as const) {
+export class UpdatePermissionDto extends OmitType(CreatePermissionDto, [] as const) {
   @ApiProperty({ description: '菜单ID', example: 1 })
   @IsInt()
   id: number;
 }
 
-export class MenuQueryDto {
+export class PermissionQueryDto {
   @ApiProperty({ description: '菜单名称', required: false, example: '用户管理' })
   @IsString()
   @IsOptional()
@@ -81,7 +81,7 @@ export class MenuQueryDto {
   isVisible?: boolean;
 }
 
-export class MenuIdDto {
+export class PermissionIdDto {
   @ApiProperty({ description: '菜单ID', example: 1 })
   @IsInt()
   @IsNotEmpty()

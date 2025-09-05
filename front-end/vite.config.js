@@ -56,7 +56,7 @@ export default defineConfig({
     port: 9527,
     proxy: {
       '/api': {
-        target: 'https://api.github.com',
+        target: 'http://localhost:3000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '')
       }

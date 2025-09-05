@@ -8,7 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtConfig } from '@/config/jwt.config';
 import { arrayToTree } from '@/utils/treeData';
 import { AuthUserInfoDto } from './dto/res-auth.dto';
-import { MenuListResDto, MenuTreeResDto } from '../system/menu/dto/res-menu.dto';
+import { PermissionListResDto, PermissionTreeResDto } from '../system/permission/dto/res-permission.dto';
 
 /**
  * 认证服务类
@@ -126,7 +126,7 @@ export class AuthService {
 
     // 收集用户的按钮权限和路由
     const buttons: string[] = [];
-    const menus: MenuListResDto[] = [];
+    const menus: PermissionListResDto[] = [];
     const menuSet = new Set<number>();
 
     // 遍历用户的角色和菜单
@@ -157,7 +157,7 @@ export class AuthService {
     // 去除密码字段并添加按钮和路由信息
     const { password: _password, ...userInfo } = user;
 
-    const menusTree: MenuTreeResDto[] = arrayToTree(menus, { idKey: 'id', parentIdKey: 'parentId' });
+    const menusTree: PermissionTreeResDto[] = arrayToTree(menus, { idKey: 'id', parentIdKey: 'parentId' });
 
     return {
       ...userInfo,

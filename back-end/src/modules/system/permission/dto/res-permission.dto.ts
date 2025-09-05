@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class MenuListResDto {
+export class PermissionListResDto {
   @ApiProperty({ description: '菜单ID' })
   id: number;
 
@@ -29,7 +29,7 @@ export class MenuListResDto {
   isCacheable: boolean;
 }
 
-export class MenuTreeResDto extends MenuListResDto {
-  @ApiProperty({ description: '子级菜单', type: [MenuTreeResDto] })
-  children?: MenuTreeResDto[];
+export class PermissionTreeResDto extends PermissionListResDto {
+  @ApiProperty({ description: '子级菜单', type: [PermissionTreeResDto] })
+  children?: PermissionTreeResDto[];
 }

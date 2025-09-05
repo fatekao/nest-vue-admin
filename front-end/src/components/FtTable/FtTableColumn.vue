@@ -1,23 +1,12 @@
 <script setup name="FtTableColumn">
-defineProps({
-  label: {
-    type: String,
-    default: '',
+import FtTableItem from './FtTableItem.vue'
+const props = defineProps({
+  config: {
+    type: Object,
     required: true
-  },
-  value: {
-    type: String,
-    default: ''
-  },
-  idx: {
-    type: Number,
-    default: 0
-  },
-  props: {
-    type: Object
-  },
-  children: Array
+  }
 })
+const { value, label, children } = props.config
 const slots = useSlots()
 </script>
 
@@ -37,7 +26,9 @@ const slots = useSlots()
         </FtTableColumn>
       </template>
       <template v-else>
-        <slot :name="value" :scope :props> {{ scope.row[value] }} </slot>
+        <slot :name="value" v-bind="scope">
+          <FtTableItem :scope :config="props.config"></FtTableItem>
+        </slot>
       </template>
     </template>
   </el-table-column>

@@ -9,7 +9,7 @@
         <div class="login-subtitle">企业级后台管理系统</div>
       </div>
 
-      <el-form ref="loginFormRef" :model="login.form" :rules="login.rules" class="login-form" @keyup.enter="submit">
+      <el-form ref="loginForm" :model="login.form" :rules="login.rules" class="login-form" @keyup.enter="submit">
         <el-form-item prop="username">
           <el-input v-model="login.form.username" placeholder="请输入用户名" size="large" clearable :disabled="login.loading">
             <template #prefix>
@@ -45,8 +45,8 @@ const loginFormRef = useTemplateRef('loginForm')
 // 登录表单数据
 const login = reactive({
   form: {
-    username: '',
-    password: ''
+    username: 'admin',
+    password: 'Admin123!'
   },
   rules: {
     username: [
@@ -64,6 +64,7 @@ const login = reactive({
 const userStore = useUserStore()
 const router = useRouter()
 const route = useRoute()
+
 const submit = async () => {
   loginFormRef.value.validate().then(() => {
     login.loading = true
@@ -74,7 +75,7 @@ const submit = async () => {
         const redirectPath = route.query.redirect
         router.replace(redirectPath || '/')
       })
-      .actch((error) => {
+      .catch((error) => {
         console.error('登录失败:', error)
         ElMessage.error(error.message || '登录失败，请检查用户名和密码')
       })

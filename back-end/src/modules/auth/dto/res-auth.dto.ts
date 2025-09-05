@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { UserInfoResDto } from '@/modules/system/user/dto/res-user.dto';
-import { MenuTreeResDto } from '@/modules/system/menu/dto/res-menu.dto';
+import { PermissionTreeResDto } from '@/modules/system/permission/dto/res-permission.dto';
 
 /**
  * 用户认证数据传输对象
@@ -20,6 +20,6 @@ export class AuthUserInfoDto extends OmitType(UserInfoResDto, [
   @ApiProperty({ description: '用户权限' })
   buttons: string[];
 
-  @ApiProperty({ description: '用户菜单', type: [MenuTreeResDto] })
-  menus: MenuTreeResDto[];
+  @ApiProperty({ description: '用户菜单', type: [PermissionTreeResDto] })
+  menus: PermissionTreeResDto[];
 }

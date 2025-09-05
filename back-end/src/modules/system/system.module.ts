@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { UserModule } from './user/user.module';
-import { MenuModule } from './menu/menu.module';
+import { PermissionModule } from './permission/permission.module';
 
 @Module({
-  imports: [UserModule, MenuModule],
+  imports: [UserModule, PermissionModule],
 })
 export class SystemModule {}

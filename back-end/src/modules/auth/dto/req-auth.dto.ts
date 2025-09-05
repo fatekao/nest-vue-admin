@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class LoginDto {
   @ApiProperty({ description: '用户名', required: true, example: 'admin' })
@@ -12,13 +12,13 @@ export class LoginDto {
   @IsString({ message: '密码必须是字符串' })
   password: string;
 
-  @ApiProperty({
-    description: '验证码',
-    example: 'AB12',
-    maxLength: 4,
-    minLength: 4,
-  })
-  @MinLength(4, { message: '验证码长度必须为4位' })
-  @MaxLength(4, { message: '验证码长度必须为4位' })
-  code: string;
+  // @ApiProperty({
+  //   description: '验证码',
+  //   example: 'AB12',
+  //   maxLength: 4,
+  //   minLength: 4,
+  // })
+  // @MinLength(4, { message: '验证码长度必须为4位' })
+  // @MaxLength(4, { message: '验证码长度必须为4位' })
+  // code: string;
 }

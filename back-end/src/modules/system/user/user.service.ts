@@ -164,12 +164,10 @@ export class UserService {
 
     return {
       list: DataTransformer.formatUserList(users),
-      pagination: {
-        total,
-        totalPages,
-        page,
-        pageSize,
-      },
+      total,
+      totalPages,
+      page,
+      pageSize,
     };
   }
 

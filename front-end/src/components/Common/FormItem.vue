@@ -1,6 +1,6 @@
 <script setup>
 defineProps({
-  t: {
+  type: {
     type: String,
     default: 'input'
   },

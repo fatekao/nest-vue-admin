@@ -27,7 +27,7 @@ defineProps({
     </div>
     <el-table :data="data" v-bind="$attrs">
       <template v-for="(item, index) in columns" :key="index">
-        <FtTableColumn v-bind="item" :idx="index"></FtTableColumn>
+        <FtTableColumn :config="item" :idx="index"></FtTableColumn>
       </template>
       <FtTableActions v-if="actions" v-bind="actions"></FtTableActions>
     </el-table>

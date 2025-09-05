@@ -1,5 +1,10 @@
 import { getTokenStorage, getUserInfoStorage, setTokenStorage } from '@/utils/webStorage'
-import { login } from '@/api/common'
+import { login, getUserInfo } from '@/api/common'
+import { innerRoutes } from '@/router/config'
+import { isLocal } from '@/utils/helper'
+import { cleanTree, flattenTree } from '@/utils/treeData'
+
+import router from '@/router'
 
 const useUserStore = defineStore('user', {
   state: () => ({
@@ -9,8 +14,40 @@ const useUserStore = defineStore('user', {
     buttons: []
   }),
   actions: {
-    setUserInfo(userInfo) {
-      this.userInfo = userInfo
+    getUserInfo() {
+      return new Promise((resolve) => {
+        if (isLocal) {
+          this.userInfo = {}
+          this.buttons = []
+          this.routes = [...innerRoutes]
+        } else {
+          getUserInfo().then((res) => {
+            const { buttons, menus, ...userInfo } = res.data
+            this.userInfo = userInfo
+            this.buttons = buttons
+            this.routes = cleanTree(menus, (item) => {
+              return {
+                path: item.path,
+                name: item.name,
+                meta: item.meta,
+                component: () => import(`@/views/${item.component}.vue`)
+              }
+            })
+          })
+        }
+
+        flattenTree(this.routes).forEach((item) => {
+          router.addRoute('layout', item)
+        })
+
+        router.addRoute({
+          path: '/:pathMatch(.*)',
+          name: '404',
+          redirect: '/404',
+          component: () => import('@/views/Error/NotFound.vue')
+        })
+        resolve()
+      })
     },
     setToken(token) {
       this.token = token

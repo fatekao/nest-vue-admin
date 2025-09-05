@@ -1,5 +1,5 @@
 import axios from 'axios'
-
+import router from '@/router'
 import { getTokenStorage } from '@/utils/webStorage'
 import qs from 'qs'
 
@@ -15,7 +15,7 @@ service.interceptors.request.use(
   (config) => {
     isBlob = config.responseType === 'blob'
 
-    config.headers.Authorization = getTokenStorage()
+    config.headers.Authorization = `Bearer ${getTokenStorage()}`
 
     if (config.contentType === 'form') {
       config.headers['Content-Type'] = 'application/x-www-form-urlencoded'
@@ -44,36 +44,34 @@ service.interceptors.response.use(
     const res = response.data
 
     if (res.code !== 200) {
-      ElMessage({
-        message: res.message || 'Error',
-        type: 'error',
-        duration: 5 * 1000
-      })
-
-      // 401: token 过期; 402: 异地登录;
-      if (res.code === 401 || res.code === 402) {
-        ElMessageBox.confirm('登录状态已失效，请重新登录', '提示', {
-          confirmButtonText: '重新登录',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          const router = useRouter()
-          router.push('/login')
-        })
-      }
+      errrorHandler(res.code, res.message)
       return Promise.reject(new Error(res.message || '请求失败'))
     } else {
       return res
     }
   },
   (error) => {
-    ElMessage({
-      message: error.message || '请求失败',
-      type: 'error',
-      duration: 5 * 1000
-    })
+    console.log(error)
+    errrorHandler(error.status, error.response.data.message || error.message)
     return Promise.reject(error)
   }
 )
 
 export default service
+
+const errrorHandler = (code, message) => {
+  ElMessage({
+    message: message || '请求失败',
+    type: 'error',
+    duration: 5 * 1000
+  })
+  if (code === 401 || code === 403) {
+    ElMessageBox.confirm('登录状态已失效，请重新登录', '提示', {
+      confirmButtonText: '重新登录',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }).then(() => {
+      router.push('/login')
+    })
+  }
+}

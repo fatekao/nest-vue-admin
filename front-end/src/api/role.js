@@ -1,40 +1,40 @@
 import service from '@/utils/request'
 
-export function getUserPage(params) {
+export function getRolePage(params) {
   return service.request({
-    url: '/system/user/page',
+    url: '/system/role/page',
     method: 'get',
     params
   })
 }
 
-export function addUser(data) {
+export function addRole(data) {
   return service.request({
-    url: '/system/user/create',
+    url: '/system/role/create',
     method: 'post',
     data
   })
 }
 
-export function editUser(data) {
+export function editRole(data) {
   return service.request({
-    url: '/system/user/update',
+    url: '/system/role/update',
     method: 'post',
     data
   })
 }
 
-export function getUser(params) {
+export function getRole(params) {
   return service.request({
-    url: '/system/user/detail',
+    url: '/system/role/detail',
     method: 'get',
     params
   })
 }
 
-export function deleteUser(data) {
+export function deleteRole(data) {
   return service.request({
-    url: '/system/user/delete',
+    url: '/system/role/delete',
     method: 'post',
     data
   })

@@ -2,7 +2,7 @@ import service from '@/utils/request'
 
 export function login(data) {
   return service.request({
-    url: '/user/login',
+    url: '/auth/login',
     method: 'post',
     data
   })
@@ -10,14 +10,14 @@ export function login(data) {
 
 export function logout() {
   return service.request({
-    url: '/user/logout',
+    url: '/auth/logout',
     method: 'post'
   })
 }
 
 export function getUserInfo() {
   return service.request({
-    url: '/user/info',
+    url: '/auth/getUserInfo',
     method: 'get'
   })
 }
