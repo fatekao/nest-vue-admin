@@ -3,6 +3,10 @@ defineProps({
   label: {
     type: String
   },
+  fixed: {
+    type: String,
+    default: 'right'
+  },
   list: {
     type: Object
   }
@@ -10,7 +14,7 @@ defineProps({
 </script>
 
 <template>
-  <el-table-column :label="label || '操作'">
+  <el-table-column :label="label || '操作'" :fixed>
     <template #default="scope">
       <template v-for="(item, index) in list" :key="index">
         <el-link :type="item.type || 'primary'" underline="never" @click="item.click(scope.row, item)">{{ item.label }}</el-link>

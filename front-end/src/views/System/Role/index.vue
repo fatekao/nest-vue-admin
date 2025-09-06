@@ -1,12 +1,18 @@
 <script setup>
+import enums from '@/utils/enums'
 import { getRolePage } from '@/api/role'
 const table = reactive({
   data: [],
   columns: [
     { label: '角色名称', value: 'name' },
     { label: '角色标识', value: 'key' },
-    { label: '状态', value: 'status' },
-    { label: '创建时间', value: 'createTime' },
+    {
+      label: '状态',
+      value: 'status',
+      type: 'enum',
+      options: enums.role.status
+    },
+    { label: '创建时间', value: 'createTime', type: 'date' },
     { label: '创建人', value: 'createUser' },
     { label: '备注', value: 'remark' }
   ],

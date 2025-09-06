@@ -1,1 +1,2 @@
-@import 'reset.css'
+@use 'reset.css';
+@use './table.scss' as *;

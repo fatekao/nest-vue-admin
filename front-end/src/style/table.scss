@@ -1,0 +1,17 @@
+.ft-table {
+  .ft-table-before {
+    display: flex;
+    align-items: start;
+    justify-content: space-between;
+  }
+  .ft-table-search {
+    display: flex;
+    align-items: center;
+
+  }
+  .ft-table-control {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+  }
+}

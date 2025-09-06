@@ -19,16 +19,16 @@ function getDisplayValue() {
     case 'date':
       return formatDate(fieldValue, props.config.format)
     case 'enum':
-      return getEnumLabel(fieldValue, props.config.enum)
+      return getEnumLabel(fieldValue, props.config.options)
     default:
       return fieldValue
   }
 }
 
 // 日期格式化
-function formatDate(date, format = 'yyyy-MM-dd HH:mm:ss') {
+function formatDate(date, format = 'YYYY-MM-DD HH:mm:ss') {
   if (!date) return ''
-  return dayjs.format(format)
+  return dayjs(date).format(format)
 }
 
 // 枚举值转换
