@@ -63,12 +63,12 @@ export class AuthService {
    * @param user - 已验证的用户信息
    * @returns Promise<{ accessToken: string }> - 包含访问令牌的响应对象
    */
-  async signIn(user: UserEntity): Promise<{ accessToken: string }> {
+  async signIn(user: JWTPayload): Promise<{ accessToken: string }> {
     // 构造JWT payload数据
     const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
-      userId: user.id,
+      userId: user.userId,
       username: user.username,
-      roleIds: user.roles?.map((role) => role.id) || [],
+      roleIds: user.roleIds,
     };
 
     // 生成JWT token，设置7天过期时间
@@ -107,9 +107,21 @@ export class AuthService {
         status: 1, // 确保用户状态正常
       },
       include: {
+        creator: {
+          select: { nickName: true },
+        },
+        updater: {
+          select: { nickName: true },
+        },
         roles: {
           where: { isDeleted: false, status: 0 }, // 确保角色未被删除
           include: {
+            creator: {
+              select: { nickName: true },
+            },
+            updater: {
+              select: { nickName: true },
+            },
             permissions: {
               where: { isDeleted: false }, // 确保菜单未被删除
               orderBy: { orderNum: 'asc' },
@@ -159,8 +171,14 @@ export class AuthService {
 
     const menusTree: PermissionTreeResDto[] = arrayToTree(menus, { idKey: 'id', parentIdKey: 'parentId' });
 
+    // 获取创建人和更新人名称
+    const createByName = user.creator.nickName || '';
+    const updateByName = user.updater.nickName || '';
+
     return {
       ...userInfo,
+      createByName,
+      updateByName,
       roles: [],
       menus: menusTree,
       buttons,

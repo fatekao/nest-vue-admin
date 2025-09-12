@@ -17,24 +17,20 @@ const Enum = (row, props) => {
   const { value, dict } = props
   if (Array.isArray(row[value])) {
     const result = []
-    dict.forEach(i => {
+    dict.forEach((i) => {
       if (row[value].includes(i.value)) {
         result.push(i.label)
       }
     })
-    return (
-      <span class={props.className}>
-        {result.join(',') || '-'}
-      </span>
-    )
+    return <span class={props.className}>{result.join(',') || '-'}</span>
   } else {
-    const item = dict.find(item => {
+    const item = dict.find((item) => {
       return item.value === row[value]
     })
     if (item) {
       if (item.color) {
         return (
-          <span class={[ props.className, item.className]}>
+          <span class={[props.className, item.className]}>
             <span class={['dot']} style={{ backgroundColor: item.color }}></span>
             {item.label}
           </span>

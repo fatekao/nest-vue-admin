@@ -1,5 +1,4 @@
 import { Controller, Get, Post, Body, UseGuards, Request } from '@nestjs/common';
-import { ParamsVerifyPipe } from '@/common/pipes/params-verify.pipe';
 import { LoginDto } from './dto/req-auth.dto';
 import { AuthUserInfoDto } from './dto/res-auth.dto';
 import { AuthService } from './auth.service';
@@ -18,10 +17,7 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: '登录', description: '登录接口获取token' })
   @ApiBody({ type: LoginDto })
-  signIn(
-    @Body(new ParamsVerifyPipe()) loginDto: LoginDto,
-    @Request() req: AuthenticatedRequest,
-  ): Promise<{ accessToken: string }> {
+  signIn(@Body() loginDto: LoginDto, @Request() req: AuthenticatedRequest): Promise<{ accessToken: string }> {
     return this.authService.signIn(req.user);
   }
 

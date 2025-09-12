@@ -2,6 +2,7 @@ import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { IsString, IsInt, IsOptional, IsNotEmpty, IsEnum, IsArray, Min, MaxLength } from 'class-validator';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 import { RoleStatus } from '@/common/enums';
+import { AuditDto } from '@/common/dto/audit.dto';
 
 export class RoleIdDto {
   @ApiProperty({ description: '角色ID', example: 1 })
@@ -9,7 +10,8 @@ export class RoleIdDto {
   @IsNotEmpty({ message: '角色ID不能为空' })
   id: number;
 }
-export class CreateRoleDto {
+
+export class CreateRoleDto extends AuditDto {
   @ApiProperty({ description: '角色名称，长度1-50位', example: '管理员' })
   @IsString({ message: '角色名称必须为字符串' })
   @IsNotEmpty({ message: '角色名称不能为空' })

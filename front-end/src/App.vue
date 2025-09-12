@@ -1,5 +1,5 @@
 <template>
-  <el-config-provider :locale="config.locale">
+  <el-config-provider v-bind="config">
     <router-view v-slot="{ Component }">
       <transition name="fade-transform" mode="out-in">
         <component :is="Component" />

@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto, UserPageRequeryDto } from './dto/req-user.dto';
+import { UserInfoResDto, UserInfoCreateResDto } from './dto/res-user.dto';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { RedisService } from '@/shared/redis/redis.service';
 import { CacheKeyBuilder } from '@/common/utils/query.util';
@@ -7,11 +8,11 @@ import { DataTransformer } from '@/common/utils/response.util';
 import { CACHE_TTL } from '@/common/constants/cache.constant';
 import { MESSAGES } from '@/common/constants/message.constant';
 import * as bcrypt from 'bcrypt';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class UserService {
   private readonly SALT_ROUNDS = 10;
+  private readonly DEFAULT_TEMP_PASSWORD_LENGTH = 8;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -19,53 +20,85 @@ export class UserService {
   ) {}
 
   /**
+   * 生成临时密码
+   * 格式：大写字母 + 小写字母 + 数字 + 特殊字符
+   */
+  private generateTempPassword(length: number = this.DEFAULT_TEMP_PASSWORD_LENGTH): string {
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const symbols = '!@#$%^&*';
+
+    // 确保密码包含所有类型的字符
+    let password = '';
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += symbols[Math.floor(Math.random() * symbols.length)];
+
+    // 填充剩余位数
+    const allChars = uppercase + lowercase + numbers + symbols;
+    for (let i = password.length; i < length; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+
+    // 随机打乱密码
+    return password
+      .split('')
+      .sort(() => Math.random() - 0.5)
+      .join('');
+  }
+
+  /**
    * 创建用户
    */
-  async create(createUserDto: CreateUserDto, createBy?: number) {
+  async create(createUserDto: CreateUserDto): Promise<UserInfoCreateResDto> {
+    // 系统自动生成临时密码
+    const tempPassword = this.generateTempPassword();
+
     const salt = await bcrypt.genSalt(this.SALT_ROUNDS);
-    const hashedPassword = await bcrypt.hash(createUserDto.password, salt);
+    const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
-    const userData = {
-      ...createUserDto,
-      password: hashedPassword,
-      ...(createBy && { createBy, updateBy: createBy }),
+    // 从createUserDto中排除关系字段
+    const { createBy, updateBy, ...userData } = createUserDto;
+
+    const user = await this.prisma.sysUser.create({
+      data: {
+        ...userData,
+        password: hashedPassword,
+        creator: {
+          connect: { id: createBy },
+        },
+        updater: {
+          connect: { id: updateBy },
+        },
+      },
+      include: {
+        roles: {
+          where: { isDeleted: false, status: 0 },
+          select: {
+            id: true,
+            name: true,
+            key: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    const { password: _password, ...userInfo } = user;
+
+    return {
+      ...userInfo,
+      tempPassword,
+      isTemporaryPassword: true, // 标记这是临时密码
     };
-
-    try {
-      const user = await this.prisma.sysUser.create({
-        data: userData,
-      });
-
-      // 返回时移除密码字段
-      return DataTransformer.formatUser(user);
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-        const targetField = error.meta?.target;
-        let message = '该信息已被注册';
-        if (typeof targetField === 'string') {
-          if (targetField.includes('username')) {
-            message = MESSAGES.USERNAME_EXISTS;
-          } else if (targetField.includes('email')) {
-            message = MESSAGES.EMAIL_EXISTS;
-          } else if (targetField.includes('phone')) {
-            message = MESSAGES.PHONE_EXISTS;
-          }
-        }
-        throw new ConflictException(message);
-      }
-      throw error;
-    }
   }
 
   /**
    * 重置密码
    */
-  async resetPassword(id: number, updateBy?: number) {
-    const user = await this.prisma.sysUser.findUnique({ where: { id } });
-    if (!user) {
-      throw new NotFoundException(MESSAGES.USER_NOT_FOUND);
-    }
-
+  async resetPassword(id: number) {
     const salt = await bcrypt.genSalt(this.SALT_ROUNDS);
     const hashedPassword = await bcrypt.hash('Pw123456', salt);
 
@@ -73,8 +106,6 @@ export class UserService {
       where: { id },
       data: {
         password: hashedPassword,
-        updateTime: new Date(),
-        ...(updateBy && { updateBy }),
       },
     });
 
@@ -105,7 +136,6 @@ export class UserService {
       where: { id },
       data: {
         password: hashedPassword,
-        updateTime: new Date(),
       },
     });
 
@@ -146,6 +176,12 @@ export class UserService {
         skip,
         take: pageSize,
         include: {
+          creator: {
+            select: { nickName: true },
+          },
+          updater: {
+            select: { nickName: true },
+          },
           roles: {
             where: { isDeleted: false, status: 0 },
             select: {
@@ -214,56 +250,51 @@ export class UserService {
   }
 
   /**
-   * 根据用户名查找用户
-   */
-  async findOneByUsername(username: string) {
-    return await this.prisma.sysUser.findFirst({
-      where: {
-        username,
-        isDeleted: false,
-      },
-    });
-  }
-
-  /**
    * 更新用户
    */
-  async update(updateUserDto: UpdateUserDto, updateBy?: number) {
-    const { id, ...updateData } = updateUserDto;
+  async update(updateUserDto: UpdateUserDto) {
+    const { id, createBy, updateBy, ...updateData } = updateUserDto;
 
-    try {
-      const user = await this.prisma.sysUser.update({
-        where: { id },
-        data: {
-          ...updateData,
-          updateTime: new Date(),
-          ...(updateBy && { updateBy }),
+    console.log('#######################');
+    console.log(updateData);
+    console.log('#######################');
+
+    const user = await this.prisma.sysUser.update({
+      where: { id },
+      data: {
+        ...updateData,
+        updater: {
+          connect: { id: updateBy },
         },
-      });
+      },
+      include: {
+        roles: {
+          where: { isDeleted: false, status: 0 },
+          select: {
+            id: true,
+            name: true,
+            key: true,
+            status: true,
+          },
+        },
+      },
+    });
 
-      // 清除缓存
-      const cacheKey = CacheKeyBuilder.userKey(id);
-      await this.redis.del(cacheKey);
+    // 清除缓存
+    const cacheKey = CacheKeyBuilder.userKey(id);
+    await this.redis.del(cacheKey);
 
-      return DataTransformer.formatUser(user);
-    } catch (error) {
-      if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
-        throw new ConflictException(MESSAGES.EMAIL_EXISTS);
-      }
-      throw error;
-    }
+    return DataTransformer.formatUser(user);
   }
 
   /**
    * 删除用户（软删除）
    */
-  async remove(id: number, updateBy?: number) {
+  async remove(id: number) {
     const result = await this.prisma.sysUser.update({
       where: { id },
       data: {
         isDeleted: true,
-        updateTime: new Date(),
-        ...(updateBy && { updateBy }),
       },
     });
 
@@ -271,5 +302,19 @@ export class UserService {
     await this.redis.del(cacheKey);
 
     return result;
+  }
+
+  /**
+   * 用户关联角色
+   */
+  async relateRoles(id: number, roleIds: number[]) {
+    await this.prisma.sysUser.update({
+      where: { id },
+      data: {
+        roles: {
+          set: roleIds.map((roleId) => ({ id: roleId })),
+        },
+      },
+    });
   }
 }

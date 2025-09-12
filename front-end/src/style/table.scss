@@ -1,4 +1,5 @@
 .ft-table {
+  width: 100%;
   .ft-table-before {
     display: flex;
     align-items: start;
@@ -13,5 +14,14 @@
     display: flex;
     align-items: center;
     margin-left: auto;
+  }
+  .ft-table-after {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    margin-top: 10px;
+    .el-pagination { 
+      margin-left: auto
+    }
   }
 }

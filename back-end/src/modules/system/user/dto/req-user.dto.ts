@@ -1,5 +1,6 @@
 import { OmitType, ApiProperty } from '@nestjs/swagger';
 import { PaginationDto } from '@/common/dto/pagination.dto';
+import { AuditDto } from '@/common/dto/audit.dto';
 import {
   IsString,
   IsEmail,
@@ -8,7 +9,6 @@ import {
   IsOptional,
   IsNotEmpty,
   Matches,
-  IsArray,
   IsEnum,
   Length,
   IsMobilePhone,
@@ -25,12 +25,12 @@ export class UserIdDto {
 export class updateUserPwdDto extends UserIdDto {
   @ApiProperty({ description: '密码', example: '123456' })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: '密码不能为空' })
   oldPassword: string;
 
   @ApiProperty({ description: '新密码', example: '123456' })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: '新密码不能为空' })
   @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/, {
     message: '密码至少8位，需包含大小写字母、数字和特殊字符',
   })
@@ -38,24 +38,16 @@ export class updateUserPwdDto extends UserIdDto {
 }
 
 // 新增用户
-export class CreateUserDto {
+export class CreateUserDto extends AuditDto {
   @ApiProperty({ description: '用户名，长度3-20位', example: 'admin' })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: '用户名不能为空' })
   @Length(3, 20, { message: '用户名长度必须在3-20位之间' })
   username: string;
 
-  @ApiProperty({ description: '密码，至少8位，包含大小写字母、数字和特殊字符', example: 'Password123!' })
-  @IsString()
-  @IsNotEmpty()
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z\d]).{8,}$/, {
-    message: '密码至少8位，需包含大小写字母、数字和特殊字符',
-  })
-  password: string;
-
   @ApiProperty({ description: '昵称，长度1-50位', example: '管理员' })
   @IsString()
-  @IsNotEmpty()
+  @IsNotEmpty({ message: '昵称不能为空' })
   @Length(1, 50, { message: '昵称长度必须在1-50位之间' })
   nickName: string;
 
@@ -71,7 +63,7 @@ export class CreateUserDto {
 
   @ApiProperty({ description: '手机号', example: '13800000000' })
   @IsMobilePhone('zh-CN', {}, { message: '手机号格式不正确' })
-  @IsNotEmpty()
+  @IsNotEmpty({ message: '手机号不能为空' })
   phone: string;
 
   @ApiProperty({ description: '头像地址', example: '', required: false })
@@ -83,16 +75,10 @@ export class CreateUserDto {
   @IsEnum(UserStatus, { message: '状态值不正确' })
   @IsOptional()
   status?: UserStatus;
-
-  @ApiProperty({ description: '角色ID列表', example: [1, 2], required: false })
-  @IsArray()
-  @IsInt({ each: true, message: '角色ID必须为整数' })
-  @IsOptional()
-  roleIds?: number[];
 }
 
 // 更新用户
-export class UpdateUserDto extends OmitType(CreateUserDto, ['username', 'password'] as const) {
+export class UpdateUserDto extends OmitType(CreateUserDto, ['username'] as const) {
   @ApiProperty({ description: '用户ID', example: 1 })
   @IsInt()
   id: number;

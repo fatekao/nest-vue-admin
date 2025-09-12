@@ -1,11 +1,5 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-
-import { ResponseInterceptor } from '@/common/interceptors/response.interceptor';
-import { AllExceptionFilter } from '@/common/filters/all-exceptions.filter';
-import { LoggerService } from '@/shared/logger/logger.service';
-import { ParamsVerifyPipe } from '@/common/pipes/params-verify.pipe';
-
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 /**
@@ -15,17 +9,6 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 async function bootstrap() {
   // 创建 NestJS 应用实例
   const app = await NestFactory.create(AppModule);
-
-  const loggerService = app.get(LoggerService);
-
-  // 注册全局响应拦截器，统一响应格式
-  app.useGlobalInterceptors(new ResponseInterceptor(loggerService));
-
-  // 注册全局异常过滤器，统一异常处理
-  app.useGlobalFilters(new AllExceptionFilter(loggerService));
-
-  // 注册全局管道，参数验证和转换
-  app.useGlobalPipes(new ParamsVerifyPipe());
 
   // CORS 跨域配置
   app.enableCors({

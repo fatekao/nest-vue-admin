@@ -21,7 +21,7 @@
         <el-form-item prop="password">
           <el-input v-model="login.form.password" placeholder="请输入密码" type="password" size="large" show-password clearable :disabled="login.loading">
             <template #prefix>
-              <FtIcon name="setting"></FtIcon>
+              <FtIcon name="lock"></FtIcon>
             </template>
           </el-input>
         </el-form-item>

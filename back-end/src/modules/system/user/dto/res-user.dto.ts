@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { PaginationDto } from '@/common/dto/pagination.dto';
 import { AuditDto } from '@/common/dto/audit.dto';
 import { RoleInfoResDto } from '@/modules/system/role/dto/res-role.dto';
@@ -31,22 +31,30 @@ export class UserInfoResDto extends AuditDto {
 
   @ApiProperty({ description: '角色', example: 1, required: false })
   roles: (RoleInfoResDto | null)[];
+
+  @ApiProperty({ description: '创建人', example: '', required: false })
+  createByName: string;
+
+  @ApiProperty({ description: '更新人', example: '', required: false })
+  updateByName: string;
+}
+
+export class UserInfoCreateResDto extends OmitType(UserInfoResDto, ['createByName', 'updateByName', 'roles'] as const) {
+  @ApiProperty({ description: '临时密码', example: true })
+  tempPassword: string;
+
+  @ApiProperty({ description: '临时密码是否已使用', example: true })
+  isTemporaryPassword: boolean;
 }
 
 // 用户列表分页响应
 export class UserListResDto {
   @ApiProperty({ description: '用户列表', type: [UserInfoResDto] })
   users: UserInfoResDto[];
-
-  @ApiProperty({ description: '分页信息' })
-  pagination: PaginationDto;
 }
 
 // 用户列表查询参数
-export class UserPageResDto {
+export class UserPageResDto extends PaginationDto {
   @ApiProperty({ description: '用户列表', type: [UserInfoResDto] })
   list: UserInfoResDto[];
-
-  @ApiProperty({ description: '分页信息' })
-  pagination: PaginationDto;
 }

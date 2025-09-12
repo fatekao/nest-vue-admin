@@ -1,4 +1,4 @@
-import { ApiResponse } from '@/common/interfaces/api-response';
+import { ApiResponse } from '@/common/dto/response.dto';
 
 /**
  * 响应格式化工具类

@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { Request } from 'express';
 
-import { ApiResponse } from '@/common/interfaces/api-response';
+import { ApiResponse } from '@/common/dto/response.dto';
 import { LoggerService } from '@/shared/logger/logger.service';
 
 @Injectable()

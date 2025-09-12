@@ -6,7 +6,40 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('开始初始化种子数据...');
 
-  // 1. 创建超级管理员角色
+  // 1. 创建超级管理员用户（需要先创建，因为其他实体的审计字段需要关联到它）
+  const hashedPassword = await bcrypt.hash('Admin123!', 10);
+
+  const adminUser = await prisma.sysUser.upsert({
+    where: { username: 'admin' },
+    update: {},
+    create: {
+      username: 'admin',
+      password: hashedPassword,
+      nickName: '超级管理员',
+      gender: 1, // 男性
+      email: 'admin@example.com',
+      phone: '13800000000',
+      status: 1, // 正常状态
+      isDeleted: false,
+      remark: '系统超级管理员账号',
+      // 审计字段，自身作为创建者和更新者
+      createBy: 1, // 初始值，创建后会更新
+      updateBy: 1, // 初始值，创建后会更新
+    },
+  });
+
+  // 更新超级管理员用户的审计字段，使其指向自身
+  await prisma.sysUser.update({
+    where: { id: adminUser.id },
+    data: {
+      createBy: adminUser.id,
+      updateBy: adminUser.id,
+    },
+  });
+
+  console.log('✅ 超级管理员用户创建成功:', adminUser);
+
+  // 2. 创建超级管理员角色
   const adminRole = await prisma.sysRole.upsert({
     where: { key: 'admin' },
     update: {},
@@ -16,12 +49,15 @@ async function main() {
       status: 0, // 正常状态
       isDeleted: false,
       remark: '超级管理员角色，拥有所有权限',
+      // 审计字段
+      createBy: adminUser.id,
+      updateBy: adminUser.id,
     },
   });
 
   console.log('✅ 超级管理员角色创建成功:', adminRole);
 
-  // 2. 创建普通用户角色
+  // 3. 创建普通用户角色
   const userRole = await prisma.sysRole.upsert({
     where: { key: 'user' },
     update: {},
@@ -31,12 +67,27 @@ async function main() {
       status: 0, // 正常状态
       isDeleted: false,
       remark: '普通用户角色',
+      // 审计字段
+      createBy: adminUser.id,
+      updateBy: adminUser.id,
     },
   });
 
   console.log('✅ 普通用户角色创建成功:', userRole);
 
-  // 3. 创建系统管理目录
+  // 4. 为超级管理员用户分配超级管理员角色
+  await prisma.sysUser.update({
+    where: { id: adminUser.id },
+    data: {
+      roles: {
+        connect: { id: adminRole.id },
+      },
+    },
+  });
+
+  console.log('✅ 超级管理员用户角色分配成功');
+
+  // 5. 创建系统管理目录
   const systemDir = await prisma.sysPermission.upsert({
     where: { permission: 'system' },
     update: {},
@@ -51,12 +102,15 @@ async function main() {
       isVisible: true,
       isCacheable: true,
       isDeleted: false,
+      // 审计字段
+      createBy: adminUser.id,
+      updateBy: adminUser.id,
     },
   });
 
   console.log('✅ 系统管理目录创建成功:', systemDir);
 
-  // 4. 创建用户管理菜单
+  // 6. 创建用户管理菜单
   const userMenu = await prisma.sysPermission.upsert({
     where: { permission: 'system:user:page' },
     update: {},
@@ -72,12 +126,15 @@ async function main() {
       isVisible: true,
       isCacheable: true,
       isDeleted: false,
+      // 审计字段
+      createBy: adminUser.id,
+      updateBy: adminUser.id,
     },
   });
 
   console.log('✅ 用户管理菜单创建成功:', userMenu);
 
-  // 5. 创建用户管理相关按钮权限
+  // 7. 创建用户管理相关按钮权限
   const userPermissions = [
     { name: '用户查询', permission: 'system:user:list', orderNum: 1 },
     { name: '用户新增', permission: 'system:user:add', orderNum: 2 },
@@ -99,13 +156,16 @@ async function main() {
         isVisible: false,
         isCacheable: false,
         isDeleted: false,
+        // 审计字段
+        createBy: adminUser.id,
+        updateBy: adminUser.id,
       },
     });
   }
 
   console.log('✅ 用户管理按钮权限创建成功');
 
-  // 6. 创建角色管理菜单
+  // 8. 创建角色管理菜单
   const roleMenu = await prisma.sysPermission.upsert({
     where: { permission: 'system:role:page' },
     update: {},
@@ -121,12 +181,15 @@ async function main() {
       isVisible: true,
       isCacheable: true,
       isDeleted: false,
+      // 审计字段
+      createBy: adminUser.id,
+      updateBy: adminUser.id,
     },
   });
 
   console.log('✅ 角色管理菜单创建成功:', roleMenu);
 
-  // 7. 创建角色管理相关按钮权限
+  // 9. 创建角色管理相关按钮权限
   const rolePermissions = [
     { name: '角色查询', permission: 'system:role:list', orderNum: 1 },
     { name: '角色新增', permission: 'system:role:add', orderNum: 2 },
@@ -148,13 +211,16 @@ async function main() {
         isVisible: false,
         isCacheable: false,
         isDeleted: false,
+        // 审计字段
+        createBy: adminUser.id,
+        updateBy: adminUser.id,
       },
     });
   }
 
   console.log('✅ 角色管理按钮权限创建成功');
 
-  // 8. 创建菜单管理菜单
+  // 10. 创建菜单管理菜单
   const menuMenu = await prisma.sysPermission.upsert({
     where: { permission: 'system:menu:page' },
     update: {},
@@ -170,12 +236,15 @@ async function main() {
       isVisible: true,
       isCacheable: true,
       isDeleted: false,
+      // 审计字段
+      createBy: adminUser.id,
+      updateBy: adminUser.id,
     },
   });
 
   console.log('✅ 菜单管理菜单创建成功:', menuMenu);
 
-  // 9. 创建菜单管理相关按钮权限
+  // 11. 创建菜单管理相关按钮权限
   const menuPermissions = [
     { name: '菜单查询', permission: 'system:menu:list', orderNum: 1 },
     { name: '菜单新增', permission: 'system:menu:add', orderNum: 2 },
@@ -196,19 +265,22 @@ async function main() {
         isVisible: false,
         isCacheable: false,
         isDeleted: false,
+        // 审计字段
+        createBy: adminUser.id,
+        updateBy: adminUser.id,
       },
     });
   }
 
   console.log('✅ 菜单管理按钮权限创建成功');
 
-  // 10. 获取所有权限ID，用于分配给超级管理员
+  // 12. 获取所有权限ID，用于分配给超级管理员
   const allPermissions = await prisma.sysPermission.findMany({
     where: { isDeleted: false },
     select: { id: true },
   });
 
-  // 11. 为超级管理员角色分配所有权限
+  // 13. 为超级管理员角色分配所有权限
   await prisma.sysRole.update({
     where: { id: adminRole.id },
     data: {
@@ -219,30 +291,6 @@ async function main() {
   });
 
   console.log('✅ 超级管理员角色权限分配成功');
-
-  // 12. 创建超级管理员用户
-  const hashedPassword = await bcrypt.hash('Admin123!', 10);
-
-  const adminUser = await prisma.sysUser.upsert({
-    where: { username: 'admin' },
-    update: {},
-    create: {
-      username: 'admin',
-      password: hashedPassword,
-      nickName: '超级管理员',
-      gender: 1, // 男性
-      email: 'admin@example.com',
-      phone: '13800000000',
-      status: 1, // 正常状态
-      isDeleted: false,
-      remark: '系统超级管理员账号',
-      roles: {
-        connect: { id: adminRole.id },
-      },
-    },
-  });
-
-  console.log('✅ 超级管理员用户创建成功:', adminUser);
 
   console.log('\n🎉 种子数据初始化完成！');
   console.log('超级管理员登录信息：');

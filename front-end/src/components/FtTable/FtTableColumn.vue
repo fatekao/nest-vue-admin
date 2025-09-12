@@ -6,12 +6,12 @@ const props = defineProps({
     required: true
   }
 })
-const { value, label, children } = props.config
+const { value, label, children, attrs } = props.config
 const slots = useSlots()
 </script>
 
 <template>
-  <el-table-column :prop="value" :label>
+  <el-table-column :prop="value" :label="label" v-bind="attrs">
     <template #header>
       <slot :name="`${value}-header`" :label>
         {{ label }}

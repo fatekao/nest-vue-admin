@@ -20,6 +20,8 @@ function getDisplayValue() {
       return formatDate(fieldValue, props.config.format)
     case 'enum':
       return getEnumLabel(fieldValue, props.config.options)
+    case 'image':
+      return getImageUrl(fieldValue)
     default:
       return fieldValue
   }
@@ -37,21 +39,27 @@ function getEnumLabel(value, enumOptions) {
   const option = enumOptions.find((item) => item.value === value)
   return option ? option.label : value
 }
+
+// 图片地址转换
+function getImageUrl(value) {
+  if (!value) return ''
+  return value
+}
 </script>
 
 <template>
   <!-- 图片类型 -->
   <el-image
     v-if="props.config.type === 'image'"
-    :src="fieldValue"
-    :preview-src-list="[fieldValue]"
+    :src="getDisplayValue()"
+    :preview-src-list="[getDisplayValue()]"
     fit="cover"
     style="width: 50px; height: 50px; border-radius: 4px"
     :preview-teleported="true"
   >
     <template #error>
       <div class="image-error">
-        <FtIcon name="zichan"></FtIcon>
+        <FtIcon name="image-error"></FtIcon>
       </div>
     </template>
   </el-image>

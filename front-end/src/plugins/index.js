@@ -7,13 +7,14 @@ export default {
       Object.keys(components).map(async (key) => {
         try {
           const component = await components[key]()
-          if (component.default) {
-            app.component(component.default.name, component.default)
+          Object.keys(component).forEach((name) => {
+            app.component(component[name].name, component[name])
+
             // 开发环境添加组件注册日志
             if (import.meta.env.MODE === 'development') {
-              console.log(`已注册组件: ${component.default.name}`)
+              console.log(`已注册组件: ${component[name].name}`)
             }
-          }
+          })
         } catch (error) {
           console.error(`加载组件 ${key} 时出错:`, error)
         }
