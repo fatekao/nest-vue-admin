@@ -1,6 +1,6 @@
 import { ApiProperty, IntersectionType } from '@nestjs/swagger';
 import { IsString, IsInt, IsOptional, IsNotEmpty, IsEnum, IsArray, Min, MaxLength } from 'class-validator';
-import { PaginationDto } from '@/common/dto/pagination.dto';
+import { PaginationReqDto } from '@/common/dto/pagination.dto';
 import { RoleStatus } from '@/common/enums';
 import { AuditDto } from '@/common/dto/audit.dto';
 
@@ -43,7 +43,7 @@ export class CreateRoleDto extends AuditDto {
 
 export class UpdateRoleDto extends IntersectionType(CreateRoleDto, RoleIdDto) {}
 
-export class RolePageQueryDto extends PaginationDto {
+export class RolePageQueryDto extends PaginationReqDto {
   @ApiProperty({ description: '模糊搜索', required: false, example: '管理员' })
   @IsOptional()
   keyword?: string;

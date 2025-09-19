@@ -47,12 +47,8 @@ graph TB
 - **JWT Token 结构调整**
   ```typescript
   interface JWTPayload {
-    id: number; // 保持与数据库字段一致
+    userId: number; // 保持与数据库字段一致
     username: string;
-    applicationIds: string[]; // 用户可访问的应用列表
-    currentAppId: string; // 当前使用的应用
-    roleIds: number[]; // 在当前应用中的角色
-    permissions: string[]; // 在当前应用中的权限
     iat?: number;
     exp?: number;
   }

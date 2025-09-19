@@ -6,6 +6,7 @@ import { ApiOperation, ApiBody, ApiTags, ApiResponse } from '@nestjs/swagger';
 import { LocalAuthGuard } from '../../common/guards/local.guard';
 
 import { CurrentUser, Public } from '@/common/decorators/jwt.decorator';
+import { UserEntity } from '../system/user/entities/user.entity';
 
 @Controller('auth')
 @ApiTags('认证模块')
@@ -17,7 +18,7 @@ export class AuthController {
   @Post('login')
   @ApiOperation({ summary: '登录', description: '登录接口获取token' })
   @ApiBody({ type: LoginDto })
-  signIn(@Body() loginDto: LoginDto, @Request() req: AuthenticatedRequest): Promise<{ accessToken: string }> {
+  signIn(@Body() loginDto: LoginDto, @Request() req: UserEntity): Promise<{ accessToken: string }> {
     return this.authService.signIn(req.user);
   }
 

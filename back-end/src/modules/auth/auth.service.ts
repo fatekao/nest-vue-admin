@@ -9,6 +9,7 @@ import { JwtConfig } from '@/config/jwt.config';
 import { arrayToTree } from '@/utils/treeData';
 import { AuthUserInfoDto } from './dto/res-auth.dto';
 import { PermissionListResDto, PermissionTreeResDto } from '../system/permission/dto/res-permission.dto';
+import { plainToInstance } from 'class-transformer';
 
 /**
  * 认证服务类
@@ -63,12 +64,12 @@ export class AuthService {
    * @param user - 已验证的用户信息
    * @returns Promise<{ accessToken: string }> - 包含访问令牌的响应对象
    */
-  async signIn(user: JWTPayload): Promise<{ accessToken: string }> {
+  async signIn(user: UserEntity): Promise<{ accessToken: string }> {
+    console.log('user', user);
     // 构造JWT payload数据
     const payload: Omit<JWTPayload, 'iat' | 'exp'> = {
-      userId: user.userId,
+      userId: user.id,
       username: user.username,
-      roleIds: user.roleIds,
     };
 
     // 生成JWT token，设置7天过期时间
@@ -172,16 +173,15 @@ export class AuthService {
     const menusTree: PermissionTreeResDto[] = arrayToTree(menus, { idKey: 'id', parentIdKey: 'parentId' });
 
     // 获取创建人和更新人名称
-    const createByName = user.creator.nickName || '';
-    const updateByName = user.updater.nickName || '';
+    const createByName = user?.creator?.nickName || '';
+    const updateByName = user?.updater?.nickName || '';
 
-    return {
+    return plainToInstance(AuthUserInfoDto, {
       ...userInfo,
+      buttons,
+      menus: menusTree,
       createByName,
       updateByName,
-      roles: [],
-      menus: menusTree,
-      buttons,
-    };
+    });
   }
 }

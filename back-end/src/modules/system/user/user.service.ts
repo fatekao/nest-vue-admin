@@ -1,12 +1,14 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto, UserPageRequeryDto } from './dto/req-user.dto';
-import { UserInfoResDto, UserInfoCreateResDto } from './dto/res-user.dto';
+import { UserInfoCreateResDto, UserInfoResDto, UserInfoWithNameResDto } from './dto/res-user.dto';
 import { PrismaService } from '@/shared/prisma/prisma.service';
 import { RedisService } from '@/shared/redis/redis.service';
 import { CacheKeyBuilder } from '@/common/utils/query.util';
 import { DataTransformer } from '@/common/utils/response.util';
 import { CACHE_TTL } from '@/common/constants/cache.constant';
 import { MESSAGES } from '@/common/constants/message.constant';
+import { PaginationResDto } from '@/common/dto/pagination.dto';
+import { plainToInstance } from 'class-transformer';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -60,7 +62,7 @@ export class UserService {
     const hashedPassword = await bcrypt.hash(tempPassword, salt);
 
     // 从createUserDto中排除关系字段
-    const { createBy, updateBy, ...userData } = createUserDto;
+    const { createBy, updateBy: _updateBy, ...userData } = createUserDto;
 
     const user = await this.prisma.sysUser.create({
       data: {
@@ -70,7 +72,7 @@ export class UserService {
           connect: { id: createBy },
         },
         updater: {
-          connect: { id: updateBy },
+          connect: { id: createBy },
         },
       },
       include: {
@@ -92,6 +94,144 @@ export class UserService {
       ...userInfo,
       tempPassword,
       isTemporaryPassword: true, // 标记这是临时密码
+    };
+  }
+
+  /**
+   * 更新用户
+   */
+  async update(updateUserDto: UpdateUserDto): Promise<UserInfoResDto> {
+    const { id, updateBy, createBy: _createBy, ...updateData } = updateUserDto;
+
+    const user = await this.prisma.sysUser.update({
+      where: { id },
+      data: {
+        ...updateData,
+        updater: {
+          connect: { id: updateBy },
+        },
+      },
+      include: {
+        roles: {
+          where: { isDeleted: false, status: 0 },
+          select: {
+            id: true,
+            name: true,
+            key: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    // 清除缓存
+    const cacheKey = CacheKeyBuilder.userKey(id);
+    await this.redis.del(cacheKey);
+
+    const { password: _password, ...userInfo } = user;
+
+    return userInfo;
+  }
+
+  /**
+   * 根据ID查找用户（带缓存）
+   */
+  async findOne(id: number) {
+    const cacheKey = CacheKeyBuilder.userKey(id);
+
+    // 尝试从缓存获取
+    const cached = await this.redis.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const user = await this.prisma.sysUser.findUnique({
+      where: {
+        id,
+        isDeleted: false,
+      },
+      include: {
+        roles: {
+          where: { isDeleted: false, status: 0 },
+          select: {
+            id: true,
+            name: true,
+            key: true,
+            status: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException(MESSAGES.USER_NOT_FOUND);
+    }
+
+    const formattedUser = DataTransformer.formatUser(user);
+
+    // 设置缓存
+    await this.redis.set(cacheKey, formattedUser, CACHE_TTL.MEDIUM);
+
+    return formattedUser;
+  }
+
+  /**
+   * 分页查询用户
+   */
+  async findPage(query: UserPageRequeryDto): Promise<PaginationResDto<UserInfoWithNameResDto>> {
+    const { username, roleId, page = 1, pageSize = 10 } = query;
+
+    const where: Record<string, any> = {
+      isDeleted: false,
+    };
+
+    if (username) {
+      where.username = {
+        contains: username,
+      };
+    }
+
+    if (roleId) {
+      where.roles = {
+        some: {
+          id: roleId,
+          isDeleted: false,
+        },
+      };
+    }
+
+    const skip = (page - 1) * pageSize;
+    const [users, total] = await Promise.all([
+      this.prisma.sysUser.findMany({
+        where,
+        skip,
+        take: pageSize,
+        include: {
+          creator: {
+            select: { nickName: true },
+          },
+          updater: {
+            select: { nickName: true },
+          },
+          roles: {
+            where: { isDeleted: false, status: 0 },
+            select: {
+              id: true,
+              name: true,
+              key: true,
+              status: true,
+            },
+          },
+        },
+      }),
+      this.prisma.sysUser.count({ where }),
+    ]);
+
+    return {
+      list: plainToInstance(UserInfoWithNameResDto, users),
+      total,
+      page,
+      pageSize,
     };
   }
 
@@ -142,149 +282,6 @@ export class UserService {
     const cacheKey = CacheKeyBuilder.userKey(id);
     await this.redis.del(cacheKey);
     return MESSAGES.PASSWORD_UPDATE_SUCCESS;
-  }
-
-  /**
-   * 分页查询用户
-   */
-  async findPage(query: UserPageRequeryDto) {
-    const { username, roleId, page = 1, pageSize = 10 } = query;
-
-    const where: Record<string, any> = {
-      isDeleted: false,
-    };
-
-    if (username) {
-      where.username = {
-        contains: username,
-      };
-    }
-
-    if (roleId) {
-      where.roles = {
-        some: {
-          id: roleId,
-          isDeleted: false,
-        },
-      };
-    }
-
-    const skip = (page - 1) * pageSize;
-    const [users, total] = await Promise.all([
-      this.prisma.sysUser.findMany({
-        where,
-        skip,
-        take: pageSize,
-        include: {
-          creator: {
-            select: { nickName: true },
-          },
-          updater: {
-            select: { nickName: true },
-          },
-          roles: {
-            where: { isDeleted: false, status: 0 },
-            select: {
-              id: true,
-              name: true,
-              key: true,
-              status: true,
-            },
-          },
-        },
-      }),
-      this.prisma.sysUser.count({ where }),
-    ]);
-
-    const totalPages = Math.ceil(total / pageSize);
-
-    return {
-      list: DataTransformer.formatUserList(users),
-      total,
-      totalPages,
-      page,
-      pageSize,
-    };
-  }
-
-  /**
-   * 根据ID查找用户（带缓存）
-   */
-  async findOne(id: number) {
-    const cacheKey = CacheKeyBuilder.userKey(id);
-
-    // 尝试从缓存获取
-    const cached = await this.redis.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    const user = await this.prisma.sysUser.findUnique({
-      where: {
-        id,
-        isDeleted: false,
-      },
-      include: {
-        roles: {
-          where: { isDeleted: false, status: 0 },
-          select: {
-            id: true,
-            name: true,
-            key: true,
-            status: true,
-          },
-        },
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundException(MESSAGES.USER_NOT_FOUND);
-    }
-
-    const formattedUser = DataTransformer.formatUser(user);
-
-    // 设置缓存
-    await this.redis.set(cacheKey, formattedUser, CACHE_TTL.MEDIUM);
-
-    return formattedUser;
-  }
-
-  /**
-   * 更新用户
-   */
-  async update(updateUserDto: UpdateUserDto) {
-    const { id, createBy, updateBy, ...updateData } = updateUserDto;
-
-    console.log('#######################');
-    console.log(updateData);
-    console.log('#######################');
-
-    const user = await this.prisma.sysUser.update({
-      where: { id },
-      data: {
-        ...updateData,
-        updater: {
-          connect: { id: updateBy },
-        },
-      },
-      include: {
-        roles: {
-          where: { isDeleted: false, status: 0 },
-          select: {
-            id: true,
-            name: true,
-            key: true,
-            status: true,
-          },
-        },
-      },
-    });
-
-    // 清除缓存
-    const cacheKey = CacheKeyBuilder.userKey(id);
-    await this.redis.del(cacheKey);
-
-    return DataTransformer.formatUser(user);
   }
 
   /**

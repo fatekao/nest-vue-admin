@@ -1,6 +1,7 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { UserInfoResDto } from '@/modules/system/user/dto/res-user.dto';
 import { PermissionTreeResDto } from '@/modules/system/permission/dto/res-permission.dto';
+import { Exclude } from 'class-transformer';
 
 /**
  * 用户认证数据传输对象
@@ -11,6 +12,7 @@ export class LoginTokenDto {
   token: string;
 }
 
+@Exclude()
 export class AuthUserInfoDto extends OmitType(UserInfoResDto, [
   'createBy',
   'updateBy',

@@ -1,5 +1,5 @@
 import { OmitType, ApiProperty } from '@nestjs/swagger';
-import { PaginationDto } from '@/common/dto/pagination.dto';
+import { PaginationReqDto } from '@/common/dto/pagination.dto';
 import { AuditDto } from '@/common/dto/audit.dto';
 import {
   IsString,
@@ -113,7 +113,7 @@ export class UpdateUserPwdDto {
   newPassword: string;
 }
 
-export class UserPageRequeryDto extends PaginationDto {
+export class UserPageRequeryDto extends PaginationReqDto {
   @ApiProperty({ description: '用户名', required: false, example: 'username' })
   @IsString()
   @IsOptional()

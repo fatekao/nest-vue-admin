@@ -1,20 +1,22 @@
-import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus } from '@nestjs/common';
+import { ArgumentsHost, Catch, ExceptionFilter, HttpException, HttpStatus, Inject } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { Response, Request } from 'express';
 import { ErrorResponse } from '@/common/interfaces/api-response';
-import { LoggerService } from '@/shared/logger/logger.service';
+import { Logger } from 'winston';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 /**
  * 全局异常过滤器
  *
  * 捕获所有未处理的异常并返回统一的错误响应格式
  * 对于非HttpException类型的异常，返回500状态码
- * 注意：此过滤器不会捕获Prisma异常，Prisma异常由PrismaExceptionFilter专门处理
  */
 @Catch()
 export class AllExceptionFilter implements ExceptionFilter {
   constructor(
-    private readonly logger: LoggerService,
+    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    private readonly logger: Logger,
     private readonly httpAdapterHost: HttpAdapterHost,
   ) {}
 
@@ -80,6 +82,24 @@ export class AllExceptionFilter implements ExceptionFilter {
         }
       } else if (typeof response === 'string') {
         message = response;
+      }
+    } else if (exception instanceof PrismaClientKnownRequestError) {
+      // 根据错误代码处理不同类型的Prisma错误
+      switch (exception.code) {
+        case 'P2002': {
+          // 唯一约束违反
+          const targetField = exception.meta?.target as string;
+          const name = targetField.match(/_([a-zA-Z0-9]+)_key$/)![1];
+          message = `${name}已存在`;
+          break;
+        }
+        case 'P2025':
+          // 记录不存在
+          message = '操作失败，记录不存在';
+          break;
+        default:
+          // 对于未处理的Prisma错误，抛出500错误
+          message = `数据库错误: ${exception.message}`;
       }
     } else if (exception instanceof Error) {
       message = exception.message;

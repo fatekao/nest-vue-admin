@@ -1,11 +1,12 @@
 import { Controller, Get, Post, Body, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto, UserIdDto, UserPageRequeryDto, UpdateUserPwdDto } from './dto/req-user.dto';
-import { UserInfoCreateResDto } from './dto/res-user.dto';
+import { UserInfoCreateResDto, UserInfoResDto, UserInfoWithNameResDto } from './dto/res-user.dto';
 import { CreatePipe } from '@/common/pipes/create.pipe';
 import { UpdatePipe } from '@/common/pipes/update.pipe';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { SwaggerBaseApiResponse } from '@/common/dto/response.dto';
+import { SwaggerBaseApiResponse, SwaggerPaginatedResponse } from '@/common/dto/response.dto';
+import { PaginationResDto } from '@/common/dto/pagination.dto';
 
 @ApiTags('用户管理')
 @Controller('system/user')
@@ -21,8 +22,8 @@ export class UserController {
 
   @ApiOperation({ summary: '获取用户列表' })
   @Get('/page')
-  @ApiResponse({ type: SwaggerBaseApiResponse(UserInfoCreateResDto) })
-  async findAll(@Query() query: UserPageRequeryDto) {
+  @ApiResponse({ type: SwaggerPaginatedResponse(UserInfoWithNameResDto) })
+  async findAll(@Query() query: UserPageRequeryDto): Promise<PaginationResDto<UserInfoWithNameResDto>> {
     return await this.userService.findPage(query);
   }
 
@@ -34,7 +35,8 @@ export class UserController {
 
   @ApiOperation({ summary: '更新用户' })
   @Post('/update')
-  async update(@Body(UpdatePipe) updateUserDto: UpdateUserDto) {
+  @ApiResponse({ type: SwaggerBaseApiResponse(UserInfoResDto) })
+  async update(@Body(UpdatePipe) updateUserDto: UpdateUserDto): Promise<UserInfoResDto> {
     return await this.userService.update(updateUserDto);
   }
 

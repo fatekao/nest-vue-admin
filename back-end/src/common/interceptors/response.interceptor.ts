@@ -1,14 +1,15 @@
-import { CallHandler, ExecutionContext, NestInterceptor, Injectable } from '@nestjs/common';
+import { CallHandler, ExecutionContext, NestInterceptor, Injectable, Inject } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { Request } from 'express';
 
 import { ApiResponse } from '@/common/dto/response.dto';
-import { LoggerService } from '@/shared/logger/logger.service';
+import { Logger } from 'winston';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Injectable()
 export class ResponseInterceptor<T> implements NestInterceptor<T, ApiResponse<T>> {
-  constructor(private readonly logger: LoggerService) {}
+  constructor(@Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger) {}
   /**
    * 拦截请求并统一处理响应格式
    *

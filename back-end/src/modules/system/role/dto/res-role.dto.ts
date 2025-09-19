@@ -1,7 +1,22 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { PermissionListResDto } from './../../permission/dto/res-permission.dto';
 import { AuditDto } from '@/common/dto/audit.dto';
-import { PaginationDto } from '@/common/dto/pagination.dto';
+import { PaginationReqDto } from '@/common/dto/pagination.dto';
+
+// 角色信息简单响应
+export class RoleSimpleInfoResDto {
+  @ApiProperty({ description: '角色ID', example: 1 })
+  id: number;
+
+  @ApiProperty({ description: '角色名称', example: '管理员' })
+  name: string;
+
+  @ApiProperty({ description: '角色标识', example: 'admin' })
+  key: string;
+
+  @ApiProperty({ description: '状态：0-正常，1-停用', example: 0 })
+  status: number;
+}
 
 // 角色信息响应
 export class RoleInfoResDto extends AuditDto {
@@ -37,7 +52,7 @@ export class RoleSimpleResDto {
 }
 
 // 角色列表分页响应
-export class RolePageResDto extends PaginationDto {
+export class RolePageResDto extends PaginationReqDto {
   @ApiProperty({ description: '角色列表', type: [RoleInfoResDto] })
   list: RoleInfoResDto[];
 }

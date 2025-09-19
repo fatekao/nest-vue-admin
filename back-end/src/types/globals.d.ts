@@ -6,7 +6,6 @@ declare global {
   interface JWTPayload {
     userId: number;
     username: string;
-    roleIds?: number[];
     iat?: number;
     exp?: number;
   }

@@ -10,6 +10,7 @@ export class CreatePipe implements PipeTransform {
     const user = this.request.user;
     if (user) {
       value.createBy = user.userId;
+      value.updateBy = user.userId;
     }
     return value;
   }

@@ -18,7 +18,7 @@ export class RoleService {
    */
   async create(createRoleDto: CreateRoleDto) {
     // 从createRoleDto中排除关系字段
-    const { createBy, updateBy, ...roleData } = createRoleDto;
+    const { createBy, updateBy: _updateBy, ...roleData } = createRoleDto;
 
     const role = await this.prisma.sysRole.create({
       data: {
@@ -27,7 +27,7 @@ export class RoleService {
           connect: { id: createBy },
         },
         updater: {
-          connect: { id: updateBy },
+          connect: { id: createBy },
         },
       },
     });

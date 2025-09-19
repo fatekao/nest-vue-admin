@@ -1,6 +1,7 @@
-import { Injectable, NestMiddleware } from '@nestjs/common';
+import { Inject, Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
-import { LoggerService } from '@/shared/logger/logger.service';
+import { Logger } from 'winston';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import dayjs from 'dayjs';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -11,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
  */
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
-  constructor(private readonly logger: LoggerService) {}
+  constructor(@Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger) {}
 
   /**
    * 中间件处理函数
@@ -43,7 +44,7 @@ export class LoggerMiddleware implements NestMiddleware {
       } else if (statusCode >= 400) {
         this.logger.warn(`日志中间件-告警: ${logMessage}`);
       } else {
-        this.logger.log(`日志中间件-信息: ${logMessage}`);
+        this.logger.log(`日志中间件-信息:`, ` ${logMessage}`);
       }
     });
 

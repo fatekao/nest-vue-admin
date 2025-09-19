@@ -25,27 +25,27 @@ model SysUser {
   phone         String?   @unique @map("phone") @db.VarChar(20) // 手机号，唯一，限制长度
   avatar        String?   @map("avatar") @db.VarChar(500) // 头像URL，限制长度
   status        Int?      @default(1) @map("status") @db.TinyInt // 状态：0-禁用，1-正常，2-锁定，使用 TinyInt
-  isDeleted     Boolean?  @default(false) @map("is_deleted") // 删除标志：false-未删除，true-已删除 (软删除)
+  isDeleted     Boolean   @default(false) @map("is_deleted") // 删除标志：false-未删除，true-已删除 (软删除)
   lastLoginIp   String?   @map("last_login_ip") @db.VarChar(45) // 最后一次登录IP地址，IPv6最大长度45
   lastLoginTime DateTime? @map("last_login_time") // 最后一次登录时间
   remark        String?   @map("remark") @db.Text // 备注信息，使用 Text 类型
 
-  createTime         DateTime        @default(now()) @map("create_time") // 创建时间，默认当前时间
-  updateTime         DateTime        @updatedAt @map("update_time") // 最后更新时间，自动更新
-  createBy           Int             @map("create_by") // 创建者用户ID (关联 SysUser.id)
-  updateBy           Int             @map("update_by") // 最后更新者用户ID (关联 SysUser.id)
-  creator            SysUser         @relation("UserCreateBy", fields: [createBy], references: [id])
-  updater            SysUser         @relation("UserUpdateBy", fields: [updateBy], references: [id])
-  createdRoles       SysRole[]       @relation("RoleCreator")
-  updatedRoles       SysRole[]       @relation("RoleUpdater")
-  createdPermissions SysPermission[] @relation("PermissionCreator")
-  updatedPermissions SysPermission[] @relation("PermissionUpdater")
+  createTime DateTime @default(now()) @map("create_time") // 创建时间，默认当前时间
+  updateTime DateTime @updatedAt @map("update_time") // 最后更新时间，自动更新
+  createBy   Int      @map("create_by") // 创建者用户ID (关联 SysUser.id)
+  updateBy   Int      @map("update_by") // 最后更新者用户ID (关联 SysUser.id)
+  creator    SysUser  @relation("UserCreateBy", fields: [createBy], references: [id])
+  updater    SysUser  @relation("UserUpdateBy", fields: [updateBy], references: [id])
 
   roles SysRole[] // 用户与角色的多对多关系 (通过隐式中间表 sys_user_roles)
 
   // 反向关系定义，避免自动生成重复字段
-  createdUsers SysUser[] @relation("UserCreateBy")
-  updatedUsers SysUser[] @relation("UserUpdateBy")
+  createdUsers       SysUser[]       @relation("UserCreateBy")
+  updatedUsers       SysUser[]       @relation("UserUpdateBy")
+  createdRoles       SysRole[]       @relation("RoleCreator")
+  updatedRoles       SysRole[]       @relation("RoleUpdater")
+  createdPermissions SysPermission[] @relation("PermissionCreator")
+  updatedPermissions SysPermission[] @relation("PermissionUpdater")
 
   @@index([status, isDeleted], name: "idx_user_status_deleted") // 状态和删除标志的复合索引
   @@index([createTime], name: "idx_user_create_time") // 创建时间索引，便于按时间排序
@@ -56,12 +56,12 @@ model SysUser {
 // ==================== 角色表 ====================
 // 存储系统角色信息
 model SysRole {
-  id        Int      @id @default(autoincrement()) @map("role_id") // 角色ID，主键，自增
-  name      String?  @unique @map("name") @db.VarChar(50) // 角色名称，唯一，限制长度
-  key       String?  @unique @map("key") @db.VarChar(50) // 角色权限字符串标识符，唯一，限制长度
-  status    Int?     @default(0) @map("status") @db.TinyInt // 状态：0-正常，1-停用，使用 TinyInt
-  isDeleted Boolean? @default(false) @map("is_deleted") // 删除标志：false-未删除，true-已删除 (软删除)
-  remark    String?  @map("remark") @db.Text // 备注信息，使用 Text 类型
+  id        Int     @id @default(autoincrement()) @map("role_id") // 角色ID，主键，自增
+  name      String  @unique @map("name") @db.VarChar(50) // 角色名称，唯一，限制长度
+  key       String  @unique @map("key") @db.VarChar(50) // 角色权限字符串标识符，唯一，限制长度
+  status    Int     @default(0) @map("status") @db.TinyInt // 状态：0-正常，1-停用，使用 TinyInt
+  isDeleted Boolean @default(false) @map("is_deleted") // 删除标志：false-未删除，true-已删除 (软删除)
+  remark    String? @map("remark") @db.Text // 备注信息，使用 Text 类型
 
   createTime DateTime @default(now()) @map("create_time") // 创建时间，默认当前时间
   updateTime DateTime @updatedAt @map("update_time") // 最后更新时间，自动更新
