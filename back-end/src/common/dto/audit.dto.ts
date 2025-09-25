@@ -1,5 +1,15 @@
-import { Expose } from 'class-transformer';
+import { Exclude, Expose, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+
+interface AuditObject {
+  creator?: {
+    nickName?: string;
+  } | null;
+  updater?: {
+    nickName?: string;
+  } | null;
+}
+
 export class AuditDto {
   createBy: number;
 
@@ -10,20 +20,23 @@ export class AuditDto {
   updateTime: Date;
 }
 
+@Exclude()
 export class AuditWithNameDto {
-  creator: { nickName: string } | null;
+  @ApiProperty({ description: '创建时间', example: '2023-01-01 12:00:00' })
+  @Expose()
+  createTime: Date | null;
 
-  updater: { nickName: string } | null;
+  @ApiProperty({ description: '更新时间', example: '2023-01-01 12:00:00' })
+  @Expose()
+  updateTime: Date | null;
 
   @ApiProperty({ description: '创建者名称', example: 'admin', required: false })
   @Expose()
-  get createByName(): string | null {
-    return this.creator?.nickName || null;
-  }
+  @Transform(({ obj }) => (obj as AuditObject).creator?.nickName || null, { toClassOnly: true })
+  createByName: string | null;
 
   @ApiProperty({ description: '更新者名称', example: 'admin', required: false })
   @Expose()
-  get updateByName(): string | null {
-    return this.updater?.nickName || null;
-  }
+  @Transform(({ obj }) => (obj as AuditObject).updater?.nickName || null, { toClassOnly: true })
+  updateByName: string | null;
 }

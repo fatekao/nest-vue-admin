@@ -16,7 +16,7 @@ const table = reactive({
     { label: '最后登录IP', value: 'lastLoginIp', attrs: { width: '120px' } },
     { label: '最后登录时间', value: 'lastLoginTime', type: 'date', attrs: { width: 160 } },
     { label: '创建时间', value: 'createTime', type: 'date', attrs: { width: 160 } },
-    { label: '创建人', value: 'createUser', attrs: { width: 100 } },
+    { label: '创建人', value: 'createByName', attrs: { width: 100 } },
     { label: '备注', value: 'remark', attrs: { width: 160 } }
   ],
   actions: {
@@ -90,6 +90,9 @@ const search = () => {
       :actions="table.actions"
       @search="search"
     >
+      <template #username="{ row }">
+        <span>{{ row.username }}11</span>
+      </template>
       <FtTableSearch :options="table.search.list"></FtTableSearch>
       <FtTablePagination></FtTablePagination>
       <template #control>

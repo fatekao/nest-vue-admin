@@ -42,6 +42,8 @@ export class UserInfoResDto extends AuditDto {
   @Expose()
   roles: (RoleSimpleInfoResDto | null)[];
 }
+
+@Exclude()
 export class UserInfoCreateResDto extends UserInfoResDto {
   @ApiProperty({ description: '临时密码', example: true })
   @Expose()
@@ -52,4 +54,5 @@ export class UserInfoCreateResDto extends UserInfoResDto {
   isTemporaryPassword?: boolean;
 }
 
+@Exclude()
 export class UserInfoWithNameResDto extends IntersectionType(UserInfoResDto, AuditWithNameDto) {}
